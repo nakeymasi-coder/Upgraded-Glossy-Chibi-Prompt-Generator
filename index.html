@@ -1,0 +1,2354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlamorousGrammyGlowUp | AI Portrait Generator</title>
+  <style>
+    :root {
+      --royal-blue: #4F46E5;
+      --gold: #F59E0B;
+      --black: #000000;
+      --white: #FFFFFF;
+      --bg-1: #05070f;
+      --bg-2: #0d1020;
+      --border: rgba(255,255,255,0.14);
+      --text: #f8f9ff;
+      --muted: #c9cbe7;
+      --shadow: 0 18px 60px rgba(0,0,0,0.45);
+      --blue-glow: 0 0 0 1px rgba(79,70,229,0.35), 0 0 22px rgba(79,70,229,0.35);
+      --gold-glow: 0 0 0 1px rgba(245,158,11,0.35), 0 0 22px rgba(245,158,11,0.24);
+      --radius-xl: 26px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(79,70,229,0.35), transparent 26%),
+        radial-gradient(circle at top right, rgba(245,158,11,0.2), transparent 24%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 52%, #090909 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      width: 260px;
+      height: 260px;
+      top: 5%;
+      left: -60px;
+      background: rgba(79,70,229,0.2);
+    }
+
+    body::after {
+      width: 320px;
+      height: 320px;
+      right: -100px;
+      bottom: 8%;
+      background: rgba(245,158,11,0.12);
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .hero {
+      position: relative;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow), var(--blue-glow);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.06), transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(245,158,11,0.18), transparent 18%),
+        radial-gradient(circle at 15% 10%, rgba(79,70,229,0.2), transparent 20%);
+      pointer-events: none;
+    }
+
+    .brand-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(245,158,11,0.35);
+      background: rgba(245,158,11,0.12);
+      color: var(--white);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+      box-shadow: var(--gold-glow);
+    }
+
+    .hero-grid,
+    .layout {
+      display: grid;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .hero-grid { grid-template-columns: 1.3fr 0.9fr; }
+    .layout { grid-template-columns: 1.2fr 0.8fr; }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, var(--white), #cfd3ff 35%, #f7c76e 85%, var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p,
+    .footer-note,
+    .tiny-note,
+    .status-bar,
+    .panel-header span {
+      color: var(--muted);
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 780px;
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .hero-card,
+    .stat,
+    .hero-list li {
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      border-radius: 16px;
+    }
+
+    .hero-card { padding: 20px; }
+
+    .hero-card h2,
+    .stat strong,
+
+    .hero-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .hero-list li {
+      padding: 12px 14px;
+      font-size: 0.95rem;
+    }
+
+    .panel-header,
+    .section,
+    .output-body,
+    .footer-note,
+    .prompt-meta,
+    .actions {
+      padding: 18px 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(90deg, rgba(79,70,229,0.18), rgba(245,158,11,0.08));
+    }
+
+    .panel-header h2,
+    .section-title { margin: 0; }
+
+    .section {
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .section:last-child { border-bottom: 0; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 0.98rem;
+      color: var(--white);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--gold), #ffd585);
+      box-shadow: var(--gold-glow);
+      flex: none;
+    }
+
+    .fields,
+    .actions,
+    .prompt-meta {
+      display: grid;
+      gap: 16px;
+    }
+
+    .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .actions,
+    .prompt-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.88rem;
+      color: #eef0ff;
+      font-weight: 600;
+    }
+
+    select,
+    input,
+    textarea,
+    button {
+      width: 100%;
+      border-radius: var(--radius-md);
+      font: inherit;
+    }
+
+    select,
+    input,
+    textarea {
+      border: 1px solid rgba(255,255,255,0.12);
+      outline: none;
+      color: var(--white);
+      background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04));
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: 0.22s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: rgba(255,255,255,0.52);
+    }
+
+    select:hover,
+    input:hover,
+    textarea:hover {
+      border-color: rgba(245,158,11,0.35);
+    }
+
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: rgba(79,70,229,0.75);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.18), 0 0 20px rgba(79,70,229,0.22);
+    }
+
+    select option {
+      color: #111827;
+      background: #ffffff;
+    }
+
+    .actions {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-weight: 800;
+      letter-spacing: 0.015em;
+      color: var(--white);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--royal-blue), #6f68ff 55%, #8f8aff);
+      box-shadow: var(--blue-glow), 0 18px 35px rgba(79,70,229,0.28);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #161616, #232323 60%, #2d2d2d);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #b46d00, var(--gold) 55%, #ffcc70);
+      color: #141414;
+      box-shadow: var(--gold-glow), 0 18px 35px rgba(245,158,11,0.28);
+    }
+
+    .output-wrap {
+      position: sticky;
+      top: 24px;
+    }
+
+    .stat { padding: 12px 14px; }
+
+    .stat strong {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .stat span {
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    textarea {
+      min-height: 360px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+
+    .secondary-output {
+      min-height: 220px;
+      margin-top: 16px;
+    }
+
+    .status-success { color: #bbf7d0; }
+    .status-error { color: #fecaca; }
+    .status-info { color: #dbeafe; }
+
+    .platforms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .platform {
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .tiny-note,
+    .footer-note {
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    .test-results li.pass { color: #bbf7d0; }
+    .test-results li.fail { color: #fecaca; }
+
+    .hidden { display: none !important; }
+
+
+
+    .announcement-bar {
+      position: relative;
+      margin: 14px 0 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(79,70,229,0.18), rgba(255,255,255,0.05) 48%, rgba(245,158,11,0.16));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 28px rgba(0,0,0,0.22);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .announcement-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent 18%, transparent 82%, rgba(255,255,255,0.08));
+      pointer-events: none;
+    }
+
+    .announcement-track {
+      display: inline-flex;
+      align-items: center;
+      min-width: max-content;
+      padding: 12px 0;
+      animation: glamMarquee 20s linear infinite;
+      will-change: transform;
+    }
+
+    .announcement-text {
+      display: inline-block;
+      padding-right: 48px;
+      font-size: 0.94rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--white);
+    }
+
+    @keyframes glamMarquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+
+
+    .animated-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .animated-bg::before,
+    .animated-bg::after {
+      content: "";
+      position: absolute;
+      inset: -15%;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(79,70,229,0.22), transparent 18%),
+        radial-gradient(circle at 78% 18%, rgba(245,158,11,0.14), transparent 16%),
+        radial-gradient(circle at 30% 78%, rgba(79,70,229,0.12), transparent 20%),
+        radial-gradient(circle at 86% 72%, rgba(245,158,11,0.10), transparent 18%);
+      animation: driftGlow 18s ease-in-out infinite alternate;
+      filter: blur(18px);
+    }
+
+    .animated-bg::after {
+      animation-duration: 28s;
+      animation-direction: alternate-reverse;
+      opacity: 0.72;
+      transform: scale(1.12);
+    }
+
+    .animated-lines,
+    .animated-sparkles {
+      position: absolute;
+      inset: 0;
+    }
+
+    .animated-lines {
+      background:
+        linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.05) 45%, transparent 50%),
+        linear-gradient(295deg, transparent 0%, rgba(245,158,11,0.045) 42%, transparent 48%);
+      background-size: 240% 240%, 220% 220%;
+      animation: shimmerMove 16s linear infinite;
+      opacity: 0.55;
+    }
+
+    .animated-sparkles::before,
+    .animated-sparkles::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,0.9) 0 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(245,158,11,0.85) 0 1px, transparent 1.7px),
+        radial-gradient(circle, rgba(79,70,229,0.85) 0 1px, transparent 1.7px);
+      background-size: 180px 180px, 240px 240px, 300px 300px;
+      background-position: 0 0, 60px 30px, 120px 80px;
+      opacity: 0.22;
+      animation: sparkleFloat 22s linear infinite;
+    }
+
+    .animated-sparkles::after {
+      animation-duration: 34s;
+      animation-direction: reverse;
+      opacity: 0.16;
+    }
+
+    .scroll-buttons {
+      position: fixed;
+      right: 18px;
+      bottom: 24px;
+      z-index: 30;
+      display: grid;
+      gap: 12px;
+    }
+
+    .scroll-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(180deg, rgba(79,70,229,0.82), rgba(12,16,34,0.92));
+      color: var(--white);
+      font-size: 1.1rem;
+      box-shadow: var(--blue-glow), 0 0 24px rgba(79,70,229,0.35), 0 0 42px rgba(245,158,11,0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(16px);
+    }
+
+    .scroll-btn:hover {
+      box-shadow: var(--gold-glow), 0 0 28px rgba(245,158,11,0.28), 0 0 48px rgba(79,70,229,0.18);
+    }
+
+    .marketing-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .marketing-card {
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .marketing-card h3 {
+      margin: 0 0 10px;
+      font-size: 0.96rem;
+      color: var(--gold);
+    }
+
+    .secondary-output {
+      min-height: 220px;
+    }
+
+    .marketing-output {
+      min-height: 200px;
+    }
+
+    @keyframes driftGlow {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(2%, -2%, 0) scale(1.05); }
+      100% { transform: translate3d(-2%, 3%, 0) scale(1.08); }
+    }
+
+    @keyframes shimmerMove {
+      0% { background-position: 0% 0%, 100% 100%; }
+      100% { background-position: 100% 100%, 0% 0%; }
+    }
+
+    @keyframes sparkleFloat {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-36px); }
+    }
+
+
+    .output-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .output-copy-btn {
+      width: auto;
+      min-width: 140px;
+      padding: 12px 14px;
+    }
+
+    @media (max-width: 1120px) {
+      .hero-grid,
+      .layout { grid-template-columns: 1fr; }
+      .output-wrap { position: static; }
+    }
+
+    @media (max-width: 820px) {
+      .fields,
+      .actions,
+      .prompt-meta,
+      .hero-list { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="animated-bg" aria-hidden="true">
+    <div class="animated-lines"></div>
+    <div class="animated-sparkles"></div>
+  </div>
+  <div class="scroll-buttons" aria-label="Page scroll controls">
+    <button class="scroll-btn" id="scrollUpBtn" type="button" title="Scroll up">↑</button>
+    <button class="scroll-btn" id="scrollDownBtn" type="button" title="Scroll down">↓</button>
+  </div>
+  <div class="app">
+    <section class="hero">
+      <div class="brand-chip">GlamorousGrammyGlowUp • Luxury AI Creator Tool</div>
+
+      <div class="hero-grid">
+        <div>
+          <h1><span class="gradient-text">Glossy Chibi Portrait Generator</span></h1>
+          <div class="announcement-bar" aria-label="Announcement">
+            <div class="announcement-track">
+              <span class="announcement-text">✨ Luxury Generator Bundle • Instant Download • Premium Images •</span>
+              <span class="announcement-text" aria-hidden="true">✨ Luxury Generator Bundle • Instant Download • Premium Images •</span>
+            </div>
+          </div>
+
+          <p>
+            Build bold, glossy, high-end AI portrait prompts in your GlamorousGrammyGlowUp brand vibe.
+            I upgraded the shoe options so they actually hit: Nikes, Jordans, designer heels, luxury boots, streetwear kicks, and more.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Portrait Builder</h2>
+            <span>Random stays varied. Shoes don’t suck anymore.</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title"><span class="dot"></span>Core Setup</h3>
+          <div class="fields">
+            <div class="field full">
+              <label for="gender">Gender</label>
+              <select id="gender"></select>
+            </div>
+            <div class="field full">
+              <label for="preset">Presets</label>
+              <select id="preset"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title"><span class="dot"></span>Character Customization</h3>
+          <div class="fields">
+            <div class="field"><label for="race">Race / Ethnicity</label><select id="race"></select></div>
+            <div class="field"><label for="eyeColor">Eye Color</label><select id="eyeColor"></select></div>
+            <div class="field"><label for="hairStyle">Hair Style</label><select id="hairStyle"></select></div>
+            <div class="field"><label for="hairColor">Hair Color</label><select id="hairColor"></select></div>
+            <div class="field"><label for="skinTone">Skin Tone</label><select id="skinTone"></select></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title"><span class="dot"></span>Fashion</h3>
+          <div class="fields">
+            <div class="field"><label for="tops">Tops</label><select id="tops"></select></div>
+            <div class="field"><label for="bottoms">Bottoms</label><select id="bottoms"></select></div>
+            <div class="field hidden" id="dressesField"><label for="dresses">Dresses</label><select id="dresses"></select></div>
+            <div class="field"><label for="shoes">Shoes</label><select id="shoes"></select></div>
+            <div class="field"><label for="accessories">Accessories</label><select id="accessories"></select></div>
+            <div class="field"><label for="jewelry">Jewelry</label><select id="jewelry"></select></div>
+          </div>
+        </div>
+
+        <div class="section" id="femaleBeautySection">
+          <h3 class="section-title"><span class="dot"></span>Female Beauty</h3>
+          <div class="fields">
+            <div class="field"><label for="lashes">Lashes</label><select id="lashes"></select></div>
+            <div class="field"><label for="lipStyle">Lip Style</label><select id="lipStyle"></select></div>
+            <div class="field"><label for="makeupStyle">Makeup Style</label><select id="makeupStyle"></select></div>
+            <div class="field"><label for="hairEdges">Hair Edges</label><select id="hairEdges"></select></div>
+            <div class="field"><label for="hairGems">Hair Gems</label><select id="hairGems"></select><input id="hairGemsCustom" type="text" placeholder="Custom hair gems"></div>
+            <div class="field"><label for="eyebrows">Eyebrows</label><select id="eyebrows"></select><input id="eyebrowsCustom" type="text" placeholder="Custom eyebrows"></div>
+            <div class="field"><label for="nails">Nails</label><select id="nails"></select><input id="nailsCustom" type="text" placeholder="Custom nails"></div>
+            <div class="field"><label for="facialFeaturesWomen">Facial Features</label><select id="facialFeaturesWomen"></select><input id="facialFeaturesWomenCustom" type="text" placeholder="Custom facial features"></div>
+            <div class="field"><label for="earrings">Earrings</label><select id="earrings"></select><input id="earringsCustom" type="text" placeholder="Custom earrings"></div>
+          </div>
+        </div>
+
+        <div class="section hidden" id="maleGroomingSection">
+          <h3 class="section-title"><span class="dot"></span>Male Grooming</h3>
+          <div class="fields">
+            <div class="field"><label for="facialHair">Facial Hair</label><select id="facialHair"></select></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title"><span class="dot"></span>Pose + Camera + Scene</h3>
+          <div class="fields">
+            <div class="field"><label for="pose">Pose</label><select id="pose"></select></div>
+            <div class="field"><label for="camera">Camera</label><select id="camera"></select></div>
+            <div class="field"><label for="lighting">Lighting</label><select id="lighting"></select></div>
+            <div class="field"><label for="background">Background</label><select id="background"></select><input id="backgroundCustom" type="text" placeholder="Custom background"></div>
+            <div class="field"><label for="location">Location</label><select id="location"></select><input id="locationCustom" type="text" placeholder="Custom location"></div>
+            <div class="field"><label for="elements">Elements</label><select id="elements"></select><input id="elementsCustom" type="text" placeholder="Custom elements"></div>
+            <div class="field"><label for="fog">Fog</label><select id="fog"></select><input id="fogCustom" type="text" placeholder="Custom fog"></div>
+            <div class="field"><label for="customTextStyle">Custom Text Style</label><select id="customTextStyle"></select><input id="customTextStyleCustom" type="text" placeholder="Custom text style"></div>
+            <div class="field"><label for="timeOfDay">Time Of Day</label><select id="timeOfDay"></select><input id="timeOfDayCustom" type="text" placeholder="Custom time of day"></div>
+            <div class="field"><label for="season">Season</label><select id="season"></select><input id="seasonCustom" type="text" placeholder="Custom season"></div>
+            <div class="field"><label for="colorPalette">Color Palette</label><select id="colorPalette"></select><input id="colorPaletteCustom" type="text" placeholder="Custom color palette"></div>
+            <div class="field"><label for="ornateElements">Ornate Elements</label><select id="ornateElements"></select><input id="ornateElementsCustom" type="text" placeholder="Custom ornate elements"></div>
+            <div class="field"><label for="artStyle">Art Style</label><select id="artStyle"></select><input id="artStyleCustom" type="text" placeholder="Custom art style"></div>
+            <div class="field"><label for="facialExpression">Facial Expression</label><select id="facialExpression"></select><input id="facialExpressionCustom" type="text" placeholder="Custom facial expression"></div>
+          </div>
+        </div>
+
+        
+        <div class="section">
+          <h3 class="section-title"><span class="dot"></span>Video + Song</h3>
+          <div class="fields">
+            <div class="field"><label for="videoStyle">Video Style</label><input id="videoStyle" type="text" placeholder="Example: luxury campaign, vlog, cinematic promo"></div>
+            <div class="field"><label for="videoLength">Video Length</label><select id="videoLength"></select></div>
+            <div class="field"><label for="songGenre">Song Genre</label><input id="songGenre" type="text" placeholder="Example: gospel pop, trap soul, R&B, country"></div>
+            <div class="field"><label for="songStyle">Song Style / Mood</label><input id="songStyle" type="text" placeholder="Example: uplifting, bossy, funny, worshipful"></div>
+            <div class="field"><label for="songLength">Song Length</label><select id="songLength"></select></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" id="generateBtn" type="button">Generate Prompt</button>
+          <button class="btn-gold" id="copyBtn" type="button">Copy Prompt</button>
+          <button class="btn-secondary" id="randomizeBtn" type="button">Randomize Options</button>
+          <button class="btn-secondary" id="clearBtn" type="button">Clear All</button>
+        </div>
+      </section>
+
+      <aside class="panel output-wrap">
+        <div class="panel-header">
+          <div>
+            <h2>Generated Prompt</h2>
+            <span>Copy and paste into your image platform.</span>
+          </div>
+        </div>
+
+        <div class="prompt-meta">
+          <div class="stat">
+            <strong>Female Output</strong>
+            <span>Glossy glam, dramatic eyes, luxe beauty details.</span>
+          </div>
+          <div class="stat">
+            <strong>Male Output</strong>
+            <span>Sharper features, confident swagger, stronger styling language.</span>
+          </div>
+        </div>
+
+        <div class="output-body">
+          <div class="field full">
+            <label for="promptOutput">Prompt Output</label>
+            <textarea id="promptOutput" placeholder="Your generated prompt will show up here..."></textarea>
+            <div class="output-actions">
+              <button class="btn-gold output-copy-btn" id="copyImagePromptBtn" type="button">Copy Image Prompt</button>
+            </div>
+          </div>
+          <div class="field full">
+            <label for="videoScriptOutput">Video Script Output</label>
+            <textarea id="videoScriptOutput" class="secondary-output" placeholder="Your video script will show up here..."></textarea>
+            <div class="output-actions">
+              <button class="btn-gold output-copy-btn" id="copyVideoScriptBtn" type="button">Copy Video Script</button>
+            </div>
+          </div>
+          <div class="field full">
+            <label for="sunoScriptOutput">Suno Script Output</label>
+            <textarea id="sunoScriptOutput" class="secondary-output" placeholder="Your Suno jingle or song prompt will show up here..."></textarea>
+            <div class="output-actions">
+              <button class="btn-gold output-copy-btn" id="copySunoScriptBtn" type="button">Copy Suno Script</button>
+            </div>
+          </div>
+
+          <div class="marketing-grid">
+            <div class="marketing-card">
+              <h3>Caption Suggestions</h3>
+              <textarea id="captionOutput" class="marketing-output" placeholder="Your caption ideas will show up here..."></textarea>
+              <div class="output-actions">
+                <button class="btn-gold output-copy-btn" id="copyCaptionBtn" type="button">Copy Captions</button>
+              </div>
+            </div>
+            <div class="marketing-card">
+              <h3>Marketing + Sales Copy</h3>
+              <textarea id="marketingOutput" class="marketing-output" placeholder="Your marketing ideas will show up here..."></textarea>
+              <div class="output-actions">
+                <button class="btn-gold output-copy-btn" id="copyMarketingBtn" type="button">Copy Marketing Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="statusBar" class="status-bar status-info" aria-live="polite"></div>
+
+          <div class="platforms">
+            <span class="platform">Gemini</span>
+            <span class="platform">ChatGPT</span>
+            <span class="platform">Midjourney</span>
+            <span class="platform">Leonardo AI</span>
+            <span class="platform">Ideogram</span>
+          </div>
+
+          <p class="tiny-note">
+            Shoes now include actual brand-style heat like Air Force 1s, Jordans, Dunks, Yeezy-style knit runners, red bottoms, and luxe designer boots.
+          </p>
+        </div>
+
+        <div class="footer-note">
+          GlamorousGrammyGlowUp stands for bold creativity, glam presentation, and beginner-friendly AI tools that help creators build beautiful digital products.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const data = {
+      gender: ["Female", "Male"],
+      presets: ["None", "After Dark Glam", "Art Gallery Muse", "Bossed Up Streetwear", "City Lights Flex", "Cloud Nine Soft Glam", "Desert Editorial Queen", "Downtown Doll Energy", "Executive Luxe", "Flashy Runway Rebel", "Gloss Boss Baddie", "Golden Hour Drip", "High Shine Princess", "Luxury Sports Drop", "Midnight Mirror Slay", "Modern Royalty", "Neon Street Siren", "Off Duty Cool", "Penthouse Muse", "Photo Shoot Baller", "Retro Glitz", "Rich Aunty Energy", "Street Luxe Prince", "Sunset Glow Babe", "Velvet Night King", "Weekend Rich Girl"],
+      videoLength: ["15 seconds", "30 seconds", "60 seconds"],
+      songLength: ["Jingle", "30 seconds", "1 minute"],
+
+      race: ["None", "African American", "Afro-Caribbean", "Afro-Latina", "Arab", "Asian", "Berber", "Black British", "Brazilian", "Caribbean", "Central African", "Central Asian", "Dominican", "East African", "East Asian", "Ethiopian", "European", "Filipina", "French Creole", "Ghanaian", "Indigenous", "Jamaican", "Latina", "Maasai", "Mediterranean", "Middle Eastern", "Mixed Heritage", "Native American", "Nigerian", "North African", "Pacific Islander", "Persian", "Puerto Rican", "Somali", "South Asian", "Sudanese", "Trinidadian", "West African", "Yoruba", "Zulu"],
+
+      eyeColor: ["None", "Amber", "Aquamarine", "Black", "Blue", "Bronze Hazel", "Champagne", "Charcoal Gray", "Chocolate Brown", "Cinnamon Brown", "Copper", "Dark Hazel", "Emerald Green", "Forest Green", "Golden Brown", "Golden Hazel", "Graphite", "Gray", "Green Hazel", "Honey Brown", "Ice Blue", "Icy Silver", "Lavender", "Light Brown", "Mahogany Brown", "Moss Green", "Ocean Blue", "Olive Green", "Onyx", "Sapphire Blue", "Silver Gray", "Smoky Blue", "Steel Blue", "Teal", "Topaz", "Turquoise", "Violet", "Warm Amber", "Warm Hazel", "Whiskey Brown"],
+
+      femaleHairStyles: ["None", "Afro Puff", "Asymmetrical Bob", "Barrel Curl Ponytail", "Blunt Cut Bob", "Body Wave Layers", "Boho Braids", "Box Braids", "Bubble Ponytail", "Butterfly Locs", "Cherry Cola Curls", "Cornrows", "Crimped Waves", "Curly High Ponytail", "Double Dutch Braids", "Face Framing Layers", "Feathered Layers", "Finger Waves", "Flip Bob", "Glam Space Buns", "Half Up Half Down", "Hollywood Waves", "Jumbo Braids", "Knotless Braids", "Layered Silk Press", "Long Sleek Ponytail", "Loose Curls", "Messy Top Knot", "Micro Braids", "Middle Part Blowout", "Milkmaid Braids", "Pineapple Updo", "Pixie Cut", "Ribbon Ponytail", "Romantic Curls", "Silk Press", "Sleek Low Bun", "Straight Middle Part", "Top Knot Bun", "Twisted Crown Updo"],
+
+      maleHairStyles: ["None", "Afro Taper", "Blowout Fade", "Braid Row Design", "Braided Top Knot", "Brush Cut", "Burst Fade", "Buzz Cut", "Caesar Cut", "Classic Taper", "Coil Twist Top", "Comb Over Fade", "Cornrow Braids", "Crew Cut", "Curly Drop Fade", "Curly Frohawk", "Dreadlock Ponytail", "Dreadlocks", "Edgar Cut", "Finger Coil Fade", "Flat Top", "French Crop", "Frohawk", "High Top Fade", "Loc Bun", "Loc Petals", "Low Fade Waves", "Man Bun", "Medium Twists", "Messy Textured Crop", "Mini Twist Fade", "Mohawk Fade", "Pompadour Fade", "S Curl Fade", "Shaggy Layers", "Short Sponge Twists", "Side Part Taper", "Slick Back Undercut", "South of France Fade", "Taper Fade"],
+
+      hairColor: ["None", "Ash Blonde", "Auburn", "Black", "Blue Black", "Burgundy", "Caramel Brown", "Champagne Blonde", "Cherry Red", "Chestnut Brown", "Chocolate Brown", "Cinnamon Copper", "Copper", "Dark Auburn", "Espresso Brown", "Ginger Spice", "Golden Blonde", "Honey Blonde", "Honey Brown", "Ice Platinum", "Jet Black", "Lavender", "Lilac Silver", "Mauve Brown", "Midnight Blue", "Mocha Brown", "Mushroom Brown", "Pastel Pink", "Pink Ombre", "Platinum Blonde", "Raven Black", "Rose Brown", "Rose Gold", "Sandy Blonde", "Silver", "Soft Black", "Teal", "Toffee Brown", "Violet Black", "Wine Red"],
+
+      skinTone: ["None", "Almond Beige", "Amber Beige", "Bronze Glow", "Butterscotch", "Cafe Bronze", "Caramel", "Chestnut Brown", "Cinnamon Tan", "Cocoa Satin", "Cool Beige", "Cream Beige", "Deep Bronze", "Deep Espresso", "Ebony Velvet", "Golden Beige", "Golden Brown", "Hazelnut", "Honey Glow", "Ivory Beige", "Light Olive", "Mahogany", "Maple Brown", "Medium Brown", "Mocha", "Neutral Beige", "Olive Tan", "Pecan Brown", "Porcelain", "Rich Cocoa", "Rich Umber", "Rose Beige", "Sable Brown", "Sand Beige", "Soft Tan", "Sunlit Bronze", "Toasted Almond", "Walnut", "Warm Brown", "Warm Ivory"],
+
+      topsFemale: ["None", "Asymmetrical Bodysuit", "Athleisure Zip Jacket", "Beaded Cardigan", "Bling Bustier Top", "Bomber Jacket", "Corset Top", "Cropped Denim Jacket", "Cropped Hoodie", "Crystal Fringe Top", "Crystal Mesh Top", "Draped Cowl Top", "Embellished Blazer", "Faux Fur Jacket", "Feather Trim Jacket", "Glitter Graphic Tee", "Graphic Baby Tee", "Halter Top", "Lace Corset Blouse", "Leather Moto Jacket", "Mesh Mockneck Top", "Metallic Blazer", "Off Shoulder Knit Top", "Off Shoulder Satin Top", "Oversized Jersey Top", "Pearl Button Cardigan", "Printed Kimono Top", "Puffer Vest", "Rhinestone Bodysuit", "Rhinestone Denim Jacket", "Ruched Crop Top", "Satin Blouse", "Sequin Bomber", "Sequin Crop Top", "Sheer Bell Sleeve Top", "Structured Vest Top", "Tube Top", "Varsity Jacket", "Velvet Wrap Top", "Zip Front Bodysuit"],
+
+      topsMale: ["None", "Athleisure Zip Jacket", "Baseball Jersey", "Bomber Jacket", "Boxy Knit Polo", "Button Up Shirt", "Cargo Vest", "Classic Hoodie", "Cropped Varsity Jacket", "Denim Jacket", "Designer Tracksuit Top", "Double Breasted Blazer", "Embroidered Overshirt", "Fitted Long Sleeve", "Graphic Tee", "Half Zip Sweater", "Hooded Windbreaker", "Layered Flannel Shirt", "Leather Moto Jacket", "Luxe Knit Cardigan", "Mesh Jersey Top", "Monogram Sweatshirt", "Open Collar Shirt", "Oversized Tee", "Padded Vest", "Printed Button Down", "Puffer Jacket", "Quilted Bomber", "Racing Jacket", "Ribbed Turtleneck", "Satin Track Jacket", "Short Sleeve Knit Shirt", "Silk Camp Shirt", "Sleeveless Tank", "Streetwear Coach Jacket", "Suede Trucker Jacket", "Utility Overshirt", "Varsity Jacket", "Velour Track Jacket", "Zip Polo Shirt"],
+
+      bottomsFemale: ["None", "Biker Shorts", "Cargo Mini Skirt", "Cargo Pants", "Crystal Fringe Skirt", "Denim Cargo Skirt", "Denim Mini Skirt", "Distressed Jeans", "Embellished Trousers", "Feather Trim Skirt", "Flare Pants", "High Waisted Shorts", "Leather Cargo Pants", "Leather Mini Skirt", "Leather Pants", "Metallic Mini Skirt", "Parachute Pants", "Pleated Mini Skirt", "Pleated Trousers", "Printed Flare Pants", "Rhinestone Shorts", "Ruched Satin Skirt", "Ruched Skirt", "Satin Joggers", "Sequin Joggers", "Sequin Shorts", "Skinny Jeans", "Slit Maxi Skirt", "Split Hem Pants", "Stacked Leggings", "Straight Leg Jeans", "Sweat Shorts", "Tailored Shorts", "Track Pants", "Velvet Flare Pants", "Vinyl Pants", "Wide Leg Jeans", "Wide Leg Trousers", "Wrap Skirt", "Yoga Flare Pants"],
+
+      bottomsMale: ["None", "Athletic Shorts", "Baggy Jeans", "Biker Jeans", "Cargo Pants", "Cargo Shorts", "Carpenter Pants", "Cuffed Joggers", "Denim Cargo Jeans", "Denim Shorts", "Distressed Jeans", "Drawstring Trousers", "Embroidered Trousers", "Jogger Pants", "Leather Joggers", "Leather Pants", "Loose Fit Jeans", "Parachute Pants", "Pleated Trousers", "Printed Track Pants", "Relaxed Fit Slacks", "Ripstop Pants", "Satin Trousers", "Slim Fit Trousers", "Stacked Denim", "Straight Leg Jeans", "Streetwear Shorts", "Striped Lounge Pants", "Suit Trousers", "Sweatpants", "Tailored Shorts", "Techwear Pants", "Track Pants", "Utility Pants", "Velour Track Pants", "Washed Denim Jeans", "Wide Leg Pants", "Wool Blend Trousers", "Workwear Trousers", "Zip Pocket Pants"],
+
+      dresses: ["None", "Asymmetrical Gown", "Baby Doll Dress", "Blazer Dress", "Bodycon Dress", "Corset Mini Dress", "Cowl Neck Dress", "Crystal Mesh Dress", "Cutout Dress", "Denim Dress", "Draped Satin Dress", "Embellished Midi Dress", "Feather Trim Dress", "Fit And Flare Dress", "Glitter Slip Dress", "Halter Gown", "Halter Mini Dress", "High Slit Dress", "Hoodie Dress", "Lace Mini Dress", "Mesh Overlay Dress", "Metallic Bodycon Dress", "Off Shoulder Dress", "Off Shoulder Gown", "Pearl Trim Dress", "Pleated Midi Dress", "Rhinestone Fringe Dress", "Ribbed Knit Dress", "Ruched Maxi Dress", "Satin Wrap Dress", "Sequin Gown", "Sequin Mini Dress", "Shirt Dress", "Slip Midi Dress", "Streetwear Maxi Dress", "Sweater Dress", "T Shirt Dress", "Tube Dress", "Velvet Mini Dress", "Wrap Maxi Dress"],
+
+      shoesFemale: ["None", "Alexander McQueen Oversized Sneakers", "Amina Muaddi Glass Slipper Heels", "Ankle Strap Heels", "Balenciaga Triple S Sneakers", "Balmain Sock Boots", "Bottega Veneta Stretch Heels", "Chanel Slingback Heels", "Christian Louboutin Red Bottom Heels", "Chunky Platform Combat Boots", "Classic Converse High Tops", "Combat Platform Boots", "Crystal Embellished Pumps", "Designer Monogram Slides", "Designer Monogram Sneakers", "Dior J'Adior Heels", "Dolce Vita Platform Sandals", "Embellished Mules", "Fendi Platform Heels", "Glitter Platform Heels", "Gold Chain Sandals", "Gucci Ace Sneakers", "Gucci Horsebit Loafers", "Jordan 1 High Tops", "Jordan 4 Retro Sneakers", "Knee High Patent Boots", "Lace Up Stiletto Boots", "Louis Vuitton Archlight Sneakers", "Miu Miu Ballet Flats", "Nike Air Force 1s", "Nike Dunk Lows", "Patent Mary Janes", "Prada Combat Boots", "Rhinestone Cowboy Boots", "Square Toe Heels", "Strappy Metallic Stilettos", "Studded Ankle Boots", "Valentino Rockstud Heels", "Versace Platform Pumps", "Yeezy Style Knit Runners"],
+
+      shoesMale: ["None", "Adidas Samba Sneakers", "Alexander McQueen Oversized Sneakers", "Amiri Skel Top Sneakers", "Balenciaga Track Sneakers", "Bottega Lug Boots", "Burberry Check Sneakers", "Chelsea Leather Boots", "Chunky Combat Boots", "Classic Converse High Tops", "Designer Monogram Loafers", "Designer Penny Loafers", "Dior B23 High Tops", "Fear of God Style Sneakers", "Givenchy City Sport Sneakers", "Gucci Ace Sneakers", "High Top Canvas Sneakers", "Jordan 1 High Tops", "Jordan 11 Retro Sneakers", "Jordan 4 Retro Sneakers", "Lace Up Leather Boots", "Louis Vuitton Trainer Sneakers", "Luxury Runner Sneakers", "New Balance 550 Style Sneakers", "Nike Air Force 1s", "Nike Dunk Lows", "Nike SB Dunks", "Off White Style Sneakers", "Patent Dress Shoes", "Prada Downtown Sneakers", "Prada Loafers", "Puma Suede Classics", "Rick Owens Style Sneakers", "Slip On Leather Sneakers", "Square Toe Chelsea Boots", "Suede Desert Boots", "Timberland Style Boots", "Travis Scott Style Jordans", "Versace Greca Sneakers", "Yeezy Style Knit Runners"],
+
+      accessoriesFemale: ["None", "Beaded Handbag", "Bedazzled Phone", "Belt Bag", "Bling Compact Mirror", "Cat Eye Sunglasses", "Charm Belt", "Charm Phone Strap", "Crystal Hair Pins", "Crystal Mini Backpack", "Decorative Hair Clips", "Designer Tote", "Embellished Headband", "Fashion Fan", "Feather Hand Fan", "Fuzzy Handbag", "Glitter Phone Case", "Glossy Clutch", "Hair Bow", "Heart Sunglasses", "Luxury Passport Holder", "Mini Purse", "Mini Top Handle Bag", "Pearl Hair Clip", "Phone Case Charm", "Quilted Crossbody", "Rhinestone Belt", "Rhinestone Visor", "Satin Gloves", "Shoulder Bag", "Silk Scarf", "Sparkly Visor", "Statement Belt", "Statement Hat", "Studded Handbag", "Tinted Sunglasses", "Vanity Case", "Waist Chain", "Wrist Cuffs", "Y2K Shoulder Bag"],
+
+      accessoriesMale: ["None", "Aviator Sunglasses", "Bandana", "Beanie Hat", "Belt Bag", "Bucket Hat", "Card Holder", "Chain Belt", "Chain Wallet", "Crossbody Bag", "Designer Backpack", "Designer Duffel", "Driving Gloves", "Fingerless Gloves", "Flat Brim Cap", "Leather Backpack", "Luxury Watch", "Monogram Wallet", "Phone Crossbody Strap", "Phone Holster", "Pocket Square", "Printed Headband", "Quilted Crossbody", "Racing Gloves", "Shoulder Bag", "Silk Scarf", "Snapback Hat", "Statement Shades", "Streetwear Beanie", "Structured Briefcase", "Sunglasses", "Tech Messenger Bag", "Tinted Aviators", "Travel Case", "Utility Belt", "Utility Harness", "Weekend Tote", "Woven Belt", "Wrist Cuffs", "Zip Pouch"],
+
+      jewelryFemale: ["None", "Anklet", "Bangle Stack", "Beaded Bracelet", "Body Chain", "Butterfly Necklace", "Charm Anklet", "Charm Bracelet", "Choker Necklace", "Chunky Ring Set", "Crystal Ear Cuffs", "Crystal Necklace", "Diamond Cuff", "Diamond Studs", "Drop Earrings", "Emerald Ring", "Gemstone Ring", "Gold Cuff", "Gold Hoops", "Heart Charm Bracelet", "Heart Pendant", "Layered Chains", "Layered Pearl Necklace", "Mini Hoop Earrings", "Moon Pendant", "Nameplate Necklace", "Onyx Ring", "Pearl Choker", "Pearl Drop Earrings", "Rhinestone Earrings", "Ribbon Choker", "Rose Gold Bangles", "Sculptural Ring", "Star Pendant", "Statement Cuffs", "Statement Necklace", "Tennis Bracelet", "Tennis Necklace", "Vintage Brooch", "Waist Beads"],
+
+      jewelryMale: ["None", "Black Onyx Bracelet", "Box Chain", "Chain Bracelet", "Chunky Ring Set", "Cross Pendant", "Cuban Link Chain", "Diamond Ear Cuff", "Diamond Studs", "Dog Tag Chain", "Figaro Chain", "Gold Rope Chain", "Gold Signet Ring", "Iced Out Watch", "Layered Chains", "Leather Bracelet", "Link Bracelet", "Medallion Pendant", "Metal Cuff", "Minimal Signet Ring", "Nameplate Chain", "Onyx Ring", "Pearl Accent Chain", "Pendant Necklace", "Pinkie Ring", "Ribbed Ring", "Rope Chain", "Silver Cuff", "Silver Hoop", "Slim Chain Necklace", "Square Signet Ring", "Stacked Bracelets", "Statement Ring", "Steel Chain", "Steel Watch", "Stud Earrings", "Tag Bracelet", "Tennis Chain", "Vintage Watch", "Wristwatch"],
+
+      lashesFemale: ["None", "Anime Wispy Lashes", "Baby Doll Lashes", "Bold Volume Lashes", "Bottom Lash Detail", "Classic Glam Lashes", "Curl Lift Lashes", "Doll Eye Clusters", "Dramatic Cat Eye Lashes", "Feathered Lashes", "Flared Outer Corner Lashes", "Flutter Lashes", "Fluttery Mink Lashes", "Foxy Eye Lashes", "Glossy Lash Look", "Half Lash Accent", "Layered Cat Eye Lashes", "Long Wispy Lashes", "Mega Volume Lashes", "Natural Curl Lashes", "Natural Flare Lashes", "Open Eye Lashes", "Pixie Wispy Lashes", "Rounded Doll Lashes", "Separated Spiky Lashes", "Short Glam Lashes", "Soft Doll Lashes", "Soft Wispy Lashes", "Spiked Editorial Lashes", "Swooped Lash Look", "Tapered Glam Lashes", "Textured Volume Lashes", "Ultra Flutter Lashes", "Velvet Volume Lashes", "Wet Lash Spikes", "Whispy Anime Lashes", "Wide Eye Lashes", "Wispy Hybrid Lashes", "XL Curl Lashes", "Youthful Soft Lashes"],
+
+      lipStyleFemale: ["None", "Berry Stain Lips", "Candy Pink Gloss Lips", "Cherry Gloss Lips", "Chocolate Liner Lips", "Clear Glass Lips", "Coral Cream Lips", "Deep Cocoa Gloss Lips", "Glassy Peach Lips", "Glossy Nude Lips", "Gradient Gloss Lips", "High Shine Pink Lips", "Honey Nude Lips", "Hot Coral Gloss Lips", "Iced Pink Lips", "Juicy Berry Lips", "Latte Gloss Lips", "Maple Brown Lips", "Mauve Brown Lips", "Mauve Gloss Lips", "Metallic Rose Lips", "Mocha Lined Lips", "Nude Rose Lips", "Peach Glaze Lips", "Peony Pink Lips", "Plum Shine Lips", "Rose Brown Lips", "Rose Gold Shimmer Lips", "Soft Blush Lips", "Soft Cocoa Lips", "Sparkle Gloss Lips", "Strawberry Glaze Lips", "Sunset Coral Lips", "Terracotta Gloss Lips", "Toasted Nude Lips", "Toffee Gloss Lips", "Velvet Plum Lips", "Vinyl Red Lips", "Warm Caramel Lips", "Wet Gloss Lips"],
+
+      makeupStyleFemale: ["None", "Berry Flush Glam", "Blush Draping", "Bronzed Glam", "Champagne Highlight Glam", "Cherry Cola Glam", "Clean Girl Glam", "Cloud Skin Glam", "Color Pop Glam", "Copper Smoke Glam", "Cut Crease Glam", "Dewy Soft Glam", "Diamond Dust Glam", "Editorial Glow", "Espresso Contour Glam", "Fresh Face Makeup", "Frosted Lavender Glam", "Glossy Skin Glam", "Gold Accent Glam", "Golden Bronze Glam", "Graphic Liner Glam", "High Fashion Matte Glam", "Icy Pop Glam", "Minimal Nude Glam", "Monochrome Glam", "Natural Beat", "Peachy Glow Glam", "Prismatic Highlight Glam", "Rose Gold Glam", "Smoky Eye Glam", "Soft Matte Glam", "Soft Sculpt Glam", "Sultry Bronze Glam", "Sunset Glam", "Under Eye Sparkle Glam", "Vintage Glam", "Warm Neutral Glam", "Wet Look Glam", "Wine Toned Glam", "Y2K Frosted Glam"],
+
+      hairEdgesFemale: ["None", "Butterfly Edges", "Classic Curves", "Clean Natural Edges", "Clean Swoop Edges", "Curled Baby Hairs", "Defined Side Swoop Edges", "Double Swoop Edges", "Dramatic Swirl Edges", "Editorial Swoop Edges", "Extra Glossy Edges", "Feathered Edges", "Fine Curl Edges", "Finger Wave Edges", "Glossy Sculpted Edges", "Half Moon Edges", "Heart Shaped Edges", "Laid Curved Edges", "Micro Swirl Edges", "Mini Heart Edges", "Minimal Sleek Edges", "Polished Temple Edges", "Ribbon Curve Edges", "S Shape Edges", "Sharp Sculpted Edges", "Side Curl Edges", "Signature Swirl Edges", "Soft Laid Edges", "Soft S Curve Edges", "Soft Spiral Edges", "Star Pattern Edges", "Styled Temple Edges", "Sweep Across Edges", "Temple Loop Edges", "Triple Swirl Edges", "Ultra Defined Edges", "Ultra Laid Edges", "Velvet Sleek Edges", "Wave Pattern Edges", "Wispy Curved Edges"],
+
+      facialHairMale: ["None", "Anchored Beard", "Balbo Beard", "Beard Fade", "Chevron Mustache", "Chin Strap", "Circle Beard", "Classic Mustache", "Curved Mustache", "Defined Goatee", "Designer Beard", "Designer Stubble", "Extended Goatee", "French Beard", "Full Beard", "Goatee", "Handlebar Mustache", "Heavy Stubble", "Light Mustache", "Low Beard Fade", "Mustache And Soul Patch", "Pencil Mustache", "Refined Stubble", "Royal Beard", "Shadow Fade Beard", "Sharp Line Beard", "Short Beard", "Short Boxed Beard", "Sideburn Fade", "Soft Stubble", "Soul Patch", "Tapered Beard", "Thin Mustache", "Trimmed Beard", "Trimmed Goatee", "Van Dyke", "Van Dyke Deluxe", "Wavy Mustache", "Well Groomed Beard", "Windsor Beard"],
+
+      pose: ["None", "Arms Crossed Pose", "Back Arch Pose", "Chair Lounge Pose", "Confident Stride Pose", "Crouch Pose", "Dance Pose", "Dynamic Action Shot", "Editorial Twist Pose", "Hand On Hip Pose", "Hands In Pockets Pose", "Head Turn Pose", "Jump Pose", "Knee Pop Pose", "Laughing Pose", "Lean Pose", "Looking Back Pose", "Low Squat Pose", "Mirror Selfie Pose", "Model Stance Pose", "One Leg Lift Pose", "Over The Shoulder Pose", "Peace Sign Pose", "Phone Selfie Pose", "Pointing Pose", "Power Pose", "Reaching Pose", "Relaxed Lean Pose", "Runway Pose", "Shoulder Glance Pose", "Side Step Pose", "Sitting Pose", "Spin Pose", "Standing Pose", "Step Forward Pose", "Sunkissed Stretch Pose", "Toe Point Pose", "Victory Pose", "Walking Pose", "Window Gaze Pose"],
+
+      camera: ["None", "Beauty Closeup Shot", "Center Frame Shot", "Close Up Shot", "Detail Crop Shot", "Dutch Tilt Shot", "Dynamic Action Shot", "Eye Level Shot", "Fashion Editorial Shot", "Full Body Shot", "Full Length Front Shot", "Half Body Shot", "Head To Toe Shot", "Hero Shot", "High Angle Shot", "Long Lens Shot", "Low Angle Power Shot", "Macro Glam Shot", "Mid Shot", "Mirror Angle Shot", "Motion Blur Shot", "Over The Shoulder Shot", "Portrait Shot", "Product Style Shot", "Rear Angle Shot", "Runway Camera Shot", "Shoulder Level Shot", "Side Profile Shot", "Soft Focus Shot", "Street Photography Shot", "Studio Portrait Shot", "Symmetrical Shot", "Three Quarter Shot", "Tilted Editorial Shot", "Top Down Dramatic Shot", "Top View Shot", "Ultra Wide Shot", "Waist Up Shot", "Wide Cinematic Shot", "Zoomed Portrait Shot"],
+
+      lighting: ["None", "Aurora Glow", "Backlit Silhouette", "Butterfly Lighting", "Candlelit Glow", "Chrome Flash Lighting", "Cinematic HDR Lighting", "Clean Daylight", "Crystal Reflection Lighting", "Cyberpunk Lighting", "Diamond Sparkle Lighting", "Diffused Soft Shadows", "Dreamy Bloom Lighting", "Editorial Flash", "Fashion Runway Lighting", "Gallery Wall Lighting", "Glossy Studio Lighting", "Golden Hour Glow", "Halo Rim Lighting", "High Contrast Editorial", "High Key Lighting", "Holographic Lighting", "Luxury Spotlight Lighting", "Moody Side Lighting", "Natural Window Light", "Neon Glow", "Night City Glow", "Pearl Glow Lighting", "Prismatic Lighting", "Radiant Front Lighting", "Reflective Glow Lighting", "Soft Beauty Lighting", "Soft Box Studio Lighting", "Soft Glam Lighting", "Studio Lighting", "Sunbeam Glow", "Sunset Glow Lighting", "Velvet Shadow Lighting", "Volumetric God Rays", "Warm Luxe Lighting"],
+
+      background: ["None", "Abstract Gold Foil", "Art Gallery", "Blush Gradient Studio", "Chrome Liquid Background", "Cinematic Alley", "City Skyline Night", "Concert Backstage", "Desert Horizon", "Designer Closet", "Downtown Street Scene", "Editorial Paper Wall", "Fashion Runway", "Galaxy Swirl", "Glass Lobby", "Glossy Gradient Wall", "Graffiti Street Wall", "Graffiti Tunnel", "High Rise Balcony", "Hotel Lobby", "Ivory Luxury Backdrop", "Lakeside Dock", "Luxury Club Interior", "Luxury Mansion", "Luxury Penthouse", "Marble Hallway", "Mirror Room", "Modern Loft", "Music Video Stage", "Neon City Street", "Open Desert Set", "Palm Tree Skyline", "Rooftop Garden", "Runway Platform", "Sports Arena Tunnel", "Studio Backdrop", "Sunset Sky", "Tropical Courtyard", "Urban Rooftop", "Velvet Lounge"],
+
+
+      artStyle: ["None", "3D Cartoon Gloss", "Abstract Editorial", "Airbrushed Poster Art", "Anime Luxe", "Beauty Campaign Realism", "Bold Comic Glam", "Candy Gloss Illustration", "Cinematic Collage", "Couture Fashion Illustration", "Digital Beauty Painting", "Dreamy Soft Focus", "Editorial Illustration", "Fantasy Glam Realism", "Fine Art Portrait", "Futuristic Glam", "Glossy Poster Realism", "Graphic Novel Chic", "High Fashion Sketch", "Hyper Real Glam", "Hyperreal Editorial", "Iconic Campaign Art", "Illustrated Beauty Gloss", "Luxury Ad Realism", "Luxury Poster Realism", "Magazine Cover Art", "Mixed Media Glam", "Modern Beauty Render", "Neo Pop Glam", "Painterly Couture", "Photo Real Glam", "Pop Art Editorial", "Premium Chibi Realism", "Runway Illustration", "Semi Real Fashion Art", "Soft Glam Cartoon", "Stylized Editorial 3D", "Ultra Gloss Illustration", "Velvet Editorial Paint", "Vintage Vogue Illustration"],
+
+      colorPalette: ["None", "Amethyst and Gold", "Black and Chrome", "Blush and Champagne", "Blue and Silver", "Bronze and Cocoa", "Burgundy and Gold", "Caramel and Cream", "Champagne and Ivory", "Cherry and Black", "Chocolate and Gold", "Coral and Peach", "Crimson and Nude", "Emerald and Gold", "Gold and Cream", "Hot Pink and Orange", "Ice Blue and Silver", "Indigo and Gold", "Ivory and Champagne", "Lavender and Pearl", "Lilac and Silver", "Magenta and Violet", "Midnight Blue and Gold", "Mocha and Rose Gold", "Monochrome Black", "Navy and Platinum", "Onyx and Champagne", "Peach and Sage", "Pink and Gold", "Plum and Rose", "Purple and Silver", "Red and Gold", "Rose and Ivory", "Royal Blue and Gold", "Ruby and Black", "Sage and Cream", "Sunset Orange and Pink", "Teal and Gold", "Turquoise and Bronze", "White and Gold"],
+
+      customTextStyle: ["None", "Art Deco Glam", "Bold Block Serif", "Bold Brush Script", "Bubble Chrome Type", "Calligraphy Luxe", "Cinematic Poster Type", "Classic Editorial Serif", "Clean Sans Chic", "Condensed Power Type", "Copperplate Glam", "Cursive Shine Script", "Diamond Outline Type", "Dramatic Magazine Type", "Elegant Fashion Serif", "Embossed Gold Type", "Executive Serif Masthead", "Feminine Signature Script", "Futuristic Chrome Type", "Glossy Bubble Type", "Gothic Editorial Type", "Handwritten Luxe Note", "High Contrast Serif", "Luxury Campaign Typography", "Metallic Foil Script", "Minimal Chic Sans", "Modern Display Type", "Neon Glow Type", "Oversized Masthead", "Pearl Embossed Serif", "Retro Fashion Type", "Runway Title Type", "Scripted Glam Title", "Sharp Editorial Sans", "Soft Romantic Script", "Sparkle Outline Type", "Stacked Poster Type", "Street Luxe Type", "Tall Vogue Serif", "Y2K Chrome Script"],
+
+      earrings: ["None", "Bamboo Hoops", "Beaded Drops", "Butterfly Studs", "Chain Link Earrings", "Chandelier Earrings", "Chunky Gold Hoops", "Classic Pearl Studs", "Crystal Ear Cuffs", "Crystal Teardrops", "Diamond Climbers", "Diamond Studs", "Double Hoop Earrings", "Emerald Drop Earrings", "Feather Earrings", "Gemstone Hoops", "Gold Huggies", "Heart Hoop Earrings", "Iced Out Hoops", "Long Tassel Earrings", "Mini Pearl Hoops", "Mixed Metal Hoops", "Moon Charm Earrings", "Oversized Hoops", "Pearl Drop Earrings", "Rhinestone Hoops", "Rose Gold Studs", "Ruby Drop Earrings", "Sculpted Metal Drops", "Shell Earrings", "Sparkle Threaders", "Square Stud Earrings", "Star Charm Earrings", "Statement Door Knockers", "Studded Ear Cuffs", "Threader Earrings", "Triangle Drop Earrings", "Vintage Crystal Drops", "Wide Tube Hoops", "Zirconia Cluster Studs"],
+
+      eyebrows: ["None", "Arched Glam Brows", "Bold Defined Brows", "Classic Soft Arch", "Clean Sculpted Brows", "Cloud Soft Brows", "Curved Editorial Brows", "Defined Feather Brows", "Dramatic Lifted Brows", "Extra Full Brows", "Fine Tapered Brows", "Fluffy Natural Brows", "Glossed Brow Finish", "High Arch Brows", "Laminated Brows", "Light Feathered Brows", "Long Tail Brows", "Minimal Clean Brows", "Natural Full Brows", "Pinched Arch Brows", "Plush Curved Brows", "Polished Soft Brows", "Precision Angled Brows", "Rounded Soft Brows", "Sharp Editorial Brows", "Sleek Sculpted Brows", "Soft Angled Brows", "Soft Ombre Brows", "Soft Straight Brows", "Structured Clean Brows", "Swooped Glam Brows", "Thin Vintage Brows", "Tinted Full Brows", "Ultra Defined Brows", "Velvet Matte Brows", "Vintage Arched Brows", "Wispy Brow Finish", "Youthful Soft Brows", "Zero Gap Brows", "Zig Lift Brows"],
+
+      elements: ["None", "Arch Frames", "Balloon Clusters", "Border Stickers", "Bow Accents", "Butterfly Overlays", "Camera Flash Bursts", "Candles", "Chrome Orbs", "Confetti", "Crystal Frames", "Diamond Sparkles", "Drape Curtains", "Editorial Strips", "Fairy Lights", "Feather Accents", "Floral Corners", "Floating Hearts", "Floating Ribbons", "Glass Panels", "Glossy Props", "Gold Dust", "Grid Overlays", "Halo Rings", "Jewelry Props", "Light Flares", "Magazine Cutouts", "Marble Pedestals", "Mirror Pieces", "Neon Signs", "Paper Layers", "Pearl Details", "Polaroid Borders", "Poster Layers", "Product Boxes", "Reflective Panels", "Rose Petals", "Smoke Trails", "Starbursts", "Velvet Drapes"],
+
+      facialExpression: ["None", "Bold Smirk", "Calm", "Cheeky Smile", "Confident", "Dreamy", "Fierce", "Flirty", "Focused", "Gentle Smile", "Glam Pout", "Happy", "Joyful", "Laughing", "Mischievous", "Mysterious", "Neutral", "Playful", "Proud", "Regal", "Relaxed", "Seductive", "Serene", "Serious", "Sharp Stare", "Shocked", "Side Eye", "Sly Grin", "Soft Smile", "Stoic", "Strong", "Sultry", "Sweet", "Thoughtful", "Triumphant", "Unbothered", "Vintage Glam", "Warm Smile", "Whimsical", "Winking"],
+
+      facialFeaturesWomen: ["None", "Beauty Mole", "Cheek Beauty Mark", "Cheek Dimple", "Cupid Bow Lips", "Defined Cheekbones", "Dimples", "Dusting Of Freckles", "Elegant Nose Bridge", "Face Framing Freckles", "Fine Nose Freckles", "Freckles Across Cheeks", "Freckles Across Nose", "Full Lips", "Glowy Skin Texture", "Heart Shaped Face", "High Cheekbones", "Long Lashes Look", "Monolid Eyes", "Natural Flush Cheeks", "Nose Beauty Mark", "Oval Face Shape", "Petite Nose", "Rosy Cheeks", "Round Face Shape", "Sharp Jawline", "Side Beauty Mark", "Soft Almond Eyes", "Soft Cheekbones", "Soft Jawline", "Soft Smile Lines", "Subtle Freckle Clusters", "Sun Kissed Freckles", "Temple Beauty Mark", "Under Eye Beauty Mark", "Velvet Skin Finish", "Wide Set Eyes", "Youthful Cheeks", "Zoned Freckles", "Zygomatic Glow"],
+
+      fog: ["None", "Amber Mist", "Blush Fog", "Champagne Haze", "Chrome Vapor", "Cloud Haze", "Color Dust Fog", "Cotton Candy Mist", "Crystal Smoke", "Desert Dust", "Diamond Fog", "Diffuse Glow Fog", "Dream Fog", "Editorial Haze", "Electric Mist", "Feathered Fog", "Floating Vapor", "Gentle Morning Mist", "Ghosted Haze", "Glass Fog", "Glow Dust", "Gold Mist", "Heavy Fog", "Holographic Fog", "Icy Mist", "Light Atmosphere", "Low Floor Fog", "Luminous Haze", "Midnight Mist", "No Fog", "Pearl Smoke", "Prismatic Fog", "Rose Mist", "Soft Studio Haze", "Sparkle Fog", "Sunrise Mist", "Twilight Haze", "Velvet Mist", "Warm Steam Glow", "White Smoke Haze"],
+
+      hairGems: ["None", "Butterfly Clips", "Chain Veil Pins", "Champagne Crystals", "Chrome Hair Rings", "Crystal Barrettes", "Crystal Beads", "Diamond Barrettes", "Diamond Cuffs", "Emerald Hair Pins", "Floral Jewel Pins", "Gem Lined Bobby Pins", "Gemstone Beads", "Glossy Bow Clip", "Gold Hair Cuffs", "Gold Thread Wraps", "Halo Head Chain", "Heart Gem Clips", "Iced Out Clips", "Jeweled Bobby Pins", "Lilac Gem Pins", "Mini Crown Clips", "Moonstone Pins", "Opal Hair Gems", "Oversized Rhinestone Clip", "Pearl Barrettes", "Pearl Pins", "Rainbow Crystal Pins", "Rhinestone Hair Clips", "Rose Gold Cuffs", "Ruby Hair Pins", "Sapphire Clips", "Shell Pins", "Silver Hair Rings", "Sparkle Snap Clips", "Star Gem Clips", "Studded Hair Cuffs", "Velvet Bow Jewel Clip", "Vintage Gem Comb", "Wrapped Crystal Threads"],
+
+      location: ["None", "Art Gallery", "Award Stage", "Beach Club", "Beauty Studio", "Bridal Suite", "City Rooftop", "Cocktail Lounge", "Desert Resort", "Designer Closet", "Editorial Studio", "Fashion Penthouse", "Forest Retreat", "Gallery Hall", "Garden Courtyard", "Glass Lobby", "Grand Staircase", "Hotel Lobby", "Luxury Balcony", "Luxury Bedroom", "Luxury Boutique", "Luxury Penthouse", "Marble Hallway", "Modern Loft", "Mountain Overlook", "Museum Hall", "Neon Alley", "Nightclub Interior", "Oceanfront Villa", "Open Desert Set", "Outdoor Patio", "Poolside Deck", "Private Jet", "Red Carpet Event", "Resort Cabana", "Rooftop Garden", "Runway Platform", "Skyline Terrace", "Spa Lounge", "Velvet Lounge"],
+
+      nails: ["None", "Almond French Tips", "Aura Nails", "Ballerina Nude Nails", "Black Gloss Nails", "Blue Chrome Nails", "Butterfly Accent Nails", "Candy Pink Nails", "Cat Eye Nails", "Champagne Glitter Nails", "Cherry Red Nails", "Chrome French Nails", "Clear Gloss Nails", "Crystal Tip Nails", "Diamond Dust Nails", "Emerald Jewel Nails", "French Ombré Nails", "Glossy Nude Nails", "Gold Foil Nails", "Heart Detail Nails", "Icy White Nails", "Lavender Chrome Nails", "Long Coffin Nails", "Marble Nails", "Milky White Nails", "Mirror Chrome Nails", "Nude Pink Nails", "Pearl Finish Nails", "Pink Glitter Tips", "Plum Gloss Nails", "Rose Gold Nails", "Ruby Jewel Nails", "Sculpted Acrylic Nails", "Short Square Gloss Nails", "Silver Chrome Nails", "Soft Peach Nails", "Sparkle French Nails", "Stiletto Nude Nails", "Velvet Matte Nails", "Wine Red Nails"],
+
+      ornateElements: ["None", "Angel Wings", "Arch Motifs", "Baroque Corners", "Beaded Curtains", "Butterfly Halo", "Carved Frames", "Celestial Halo", "Chrome Sculptures", "Crown Details", "Crystal Chandeliers", "Diamond Borders", "Draped Pearls", "Embossed Gold Trim", "Feather Fans", "Floral Scrollwork", "Gem Studded Frames", "Glass Columns", "Gold Botanical Vines", "Gold Filigree", "Halo Orbs", "Heart Frames", "Ivory Sculptural Trim", "Jeweled Chains", "Lace Borders", "Luxury Seals", "Marble Columns", "Mirror Sunbursts", "Moon Arches", "Ornate Pedestals", "Pearl Garlands", "Ribbon Frames", "Rose Sculptures", "Royal Crests", "Sacred Glow", "Shell Embellishments", "Star Halos", "Sunburst Rays", "Velvet Tassels", "Vintage Medallions"],
+
+      season: ["None", "All Seasons", "Autumn", "Bloom Season", "Coastal Summer", "Cool Winter", "Desert Summer", "Early Autumn", "Early Spring", "Festive Winter", "Golden Autumn", "High Summer", "Holiday Season", "Late Autumn", "Late Spring", "Late Summer", "Midwinter", "Monsoon Season", "Peak Summer", "Pre Spring", "Rainy Season", "Rose Season", "Spring", "Spring Bloom", "Summer", "Summer Heat", "Sun Season", "Sunlit Spring", "Tropical Summer", "Velvet Winter", "Warm Autumn", "Warm Spring", "Wet Season", "White Winter", "Wildflower Spring", "Windy Autumn", "Winter", "Winter Glam", "Youthful Spring", "Zen Autumn"],
+
+      timeOfDay: ["None", "Afternoon", "Blue Hour", "Brunch Time", "Candlelit Evening", "Dawn", "Daylight", "Dusk", "Early Evening", "Early Morning", "Evening", "First Light", "Golden Hour", "High Noon", "Late Afternoon", "Late Evening", "Late Night", "Magic Hour", "Mid Morning", "Midday", "Midnight", "Moonlit Night", "Morning", "Night", "Noon", "Post Sunset", "Pre Dawn", "Prime Daylight", "Rose Dawn", "Soft Morning", "Starry Night", "Sunrise", "Sunset", "Twilight", "Velvet Night", "Warm Afternoon", "White Morning", "Witching Hour", "Youthful Dawn", "Zen Morning"],
+
+      presetValues: {
+        "After Dark Glam": {
+                "gender": "Female",
+                "race": "African American",
+                "eyeColor": "Onyx",
+                "hairStyle": "Wet Look Waves",
+                "hairColor": "Violet Black",
+                "skinTone": "Rich Cocoa",
+                "tops": "Crystal Mesh Top",
+                "bottoms": "Vinyl Pants",
+                "dresses": "None",
+                "shoes": "Versace Platform Pumps",
+                "accessories": "Glossy Clutch",
+                "jewelry": "Tennis Necklace",
+                "lashes": "Dramatic Cat Eye Lashes",
+                "lipStyle": "Vinyl Red Lips",
+                "makeupStyle": "Smoky Eye Glam",
+                "hairEdges": "Glossy Sculpted Edges",
+                "facialHair": "None",
+                "pose": "Power Pose",
+                "camera": "Low Angle Power Shot",
+                "lighting": "High Contrast Editorial",
+                "background": "Luxury Club Interior"
+        },
+        "Art Gallery Muse": {
+                "gender": "Female",
+                "race": "Middle Eastern",
+                "eyeColor": "Emerald Green",
+                "hairStyle": "Hollywood Waves",
+                "hairColor": "Dark Auburn",
+                "skinTone": "Golden Beige",
+                "tops": "Off Shoulder Satin Top",
+                "bottoms": "Pleated Trousers",
+                "dresses": "None",
+                "shoes": "Bottega Veneta Stretch Heels",
+                "accessories": "Mini Top Handle Bag",
+                "jewelry": "Pearl Drop Earrings",
+                "lashes": "Soft Wispy Lashes",
+                "lipStyle": "Rose Brown Lips",
+                "makeupStyle": "Editorial Glow",
+                "hairEdges": "Soft Laid Edges",
+                "facialHair": "None",
+                "pose": "Over The Shoulder Pose",
+                "camera": "Fashion Editorial Shot",
+                "lighting": "Gallery Wall Lighting",
+                "background": "Art Gallery"
+        },
+        "Bossed Up Streetwear": {
+                "gender": "Male",
+                "race": "African American",
+                "eyeColor": "Whiskey Brown",
+                "hairStyle": "Taper Fade",
+                "hairColor": "Jet Black",
+                "skinTone": "Walnut",
+                "tops": "Streetwear Coach Jacket",
+                "bottoms": "Stacked Denim",
+                "dresses": "None",
+                "shoes": "Jordan 4 Retro Sneakers",
+                "accessories": "Crossbody Bag",
+                "jewelry": "Tennis Chain",
+                "facialHair": "Sharp Line Beard",
+                "pose": "Confident Stride Pose",
+                "camera": "Full Body Shot",
+                "lighting": "Editorial Flash",
+                "background": "Urban Rooftop"
+        },
+        "City Lights Flex": {
+                "gender": "Male",
+                "race": "Caribbean",
+                "eyeColor": "Steel Blue",
+                "hairStyle": "Curly Drop Fade",
+                "hairColor": "Blue Black",
+                "skinTone": "Deep Bronze",
+                "tops": "Velour Track Jacket",
+                "bottoms": "Track Pants",
+                "dresses": "None",
+                "shoes": "Balenciaga Track Sneakers",
+                "accessories": "Statement Shades",
+                "jewelry": "Iced Out Watch",
+                "facialHair": "Designer Stubble",
+                "pose": "Walking Pose",
+                "camera": "Street Photography Shot",
+                "lighting": "Night City Glow",
+                "background": "Neon City Street"
+        },
+        "Cloud Nine Soft Glam": {
+                "gender": "Female",
+                "race": "Latina",
+                "eyeColor": "Warm Hazel",
+                "hairStyle": "Romantic Curls",
+                "hairColor": "Rose Brown",
+                "skinTone": "Rose Beige",
+                "tops": "Velvet Wrap Top",
+                "bottoms": "Wrap Skirt",
+                "dresses": "None",
+                "shoes": "Square Toe Heels",
+                "accessories": "Quilted Crossbody",
+                "jewelry": "Butterfly Necklace",
+                "lashes": "Soft Doll Lashes",
+                "lipStyle": "Peony Pink Lips",
+                "makeupStyle": "Cloud Skin Glam",
+                "hairEdges": "Soft Spiral Edges",
+                "pose": "Window Gaze Pose",
+                "camera": "Waist Up Shot",
+                "lighting": "Dreamy Bloom Lighting",
+                "background": "Blush Gradient Studio"
+        },
+        "Desert Editorial Queen": {
+                "gender": "Female",
+                "race": "East African",
+                "eyeColor": "Golden Brown",
+                "hairStyle": "Long Sleek Ponytail",
+                "hairColor": "Honey Brown",
+                "skinTone": "Sunlit Bronze",
+                "tops": "Structured Vest Top",
+                "bottoms": "Wide Leg Trousers",
+                "dresses": "None",
+                "shoes": "Valentino Rockstud Heels",
+                "accessories": "Tinted Sunglasses",
+                "jewelry": "Gold Cuff",
+                "lashes": "Foxy Eye Lashes",
+                "lipStyle": "Warm Caramel Lips",
+                "makeupStyle": "Soft Sculpt Glam",
+                "hairEdges": "Classic Curves",
+                "pose": "Model Stance Pose",
+                "camera": "Hero Shot",
+                "lighting": "Warm Luxe Lighting",
+                "background": "Open Desert Set"
+        },
+        "Downtown Doll Energy": {
+                "gender": "Female",
+                "race": "Black British",
+                "eyeColor": "Sapphire Blue",
+                "hairStyle": "Asymmetrical Bob",
+                "hairColor": "Black",
+                "skinTone": "Cool Beige",
+                "tops": "Graphic Baby Tee",
+                "bottoms": "Denim Mini Skirt",
+                "dresses": "None",
+                "shoes": "Nike Dunk Lows",
+                "accessories": "Y2K Shoulder Bag",
+                "jewelry": "Heart Pendant",
+                "lashes": "Anime Wispy Lashes",
+                "lipStyle": "Candy Pink Gloss Lips",
+                "makeupStyle": "Y2K Frosted Glam",
+                "hairEdges": "Mini Heart Edges",
+                "pose": "Peace Sign Pose",
+                "camera": "Mirror Angle Shot",
+                "lighting": "Neon Glow",
+                "background": "Downtown Street Scene"
+        },
+        "Executive Luxe": {
+                "gender": "Male",
+                "race": "European",
+                "eyeColor": "Charcoal Gray",
+                "hairStyle": "Classic Taper",
+                "hairColor": "Espresso Brown",
+                "skinTone": "Neutral Beige",
+                "tops": "Double Breasted Blazer",
+                "bottoms": "Suit Trousers",
+                "dresses": "None",
+                "shoes": "Patent Dress Shoes",
+                "accessories": "Structured Briefcase",
+                "jewelry": "Vintage Watch",
+                "facialHair": "Trimmed Beard",
+                "pose": "Standing Pose",
+                "camera": "Center Frame Shot",
+                "lighting": "Soft Box Studio Lighting",
+                "background": "Glass Lobby"
+        },
+        "Flashy Runway Rebel": {
+                "gender": "Male",
+                "race": "Mediterranean",
+                "eyeColor": "Teal",
+                "hairStyle": "Pompadour Fade",
+                "hairColor": "Silver",
+                "skinTone": "Olive Tan",
+                "tops": "Printed Button Down",
+                "bottoms": "Leather Pants",
+                "dresses": "None",
+                "shoes": "Versace Greca Sneakers",
+                "accessories": "Tinted Aviators",
+                "jewelry": "Cuban Link Chain",
+                "facialHair": "Van Dyke Deluxe",
+                "pose": "Runway Pose",
+                "camera": "Tilted Editorial Shot",
+                "lighting": "Fashion Runway Lighting",
+                "background": "Runway Platform"
+        },
+        "Gloss Boss Baddie": {
+                "gender": "Female",
+                "race": "African American",
+                "eyeColor": "Warm Amber",
+                "hairStyle": "Silk Press",
+                "hairColor": "Jet Black",
+                "skinTone": "Honey Glow",
+                "tops": "Rhinestone Bodysuit",
+                "bottoms": "None",
+                "dresses": "Bodycon Dress",
+                "shoes": "Christian Louboutin Red Bottom Heels",
+                "accessories": "Glossy Clutch",
+                "jewelry": "Diamond Cuff",
+                "lashes": "Mega Volume Lashes",
+                "lipStyle": "Glossy Nude Lips",
+                "makeupStyle": "Glossy Skin Glam",
+                "hairEdges": "Extra Glossy Edges",
+                "pose": "Hand On Hip Pose",
+                "camera": "Full Length Front Shot",
+                "lighting": "Luxury Spotlight Lighting",
+                "background": "Ivory Luxury Backdrop"
+        },
+        "Golden Hour Drip": {
+                "gender": "Male",
+                "race": "Caribbean",
+                "eyeColor": "Warm Hazel",
+                "hairStyle": "Waves",
+                "hairColor": "Toffee Brown",
+                "skinTone": "Golden Brown",
+                "tops": "Short Sleeve Knit Shirt",
+                "bottoms": "Tailored Shorts",
+                "dresses": "None",
+                "shoes": "Adidas Samba Sneakers",
+                "accessories": "Luxury Watch",
+                "jewelry": "Gold Rope Chain",
+                "facialHair": "Soft Stubble",
+                "pose": "Relaxed Lean Pose",
+                "camera": "Eye Level Shot",
+                "lighting": "Golden Hour Glow",
+                "background": "Rooftop Garden"
+        },
+        "High Shine Princess": {
+                "gender": "Female",
+                "race": "Persian",
+                "eyeColor": "Champagne",
+                "hairStyle": "Barrel Curl Ponytail",
+                "hairColor": "Champagne Blonde",
+                "skinTone": "Warm Ivory",
+                "tops": "None",
+                "bottoms": "None",
+                "dresses": "Embellished Midi Dress",
+                "shoes": "Crystal Embellished Pumps",
+                "accessories": "Satin Gloves",
+                "jewelry": "Tennis Bracelet",
+                "lashes": "Ultra Flutter Lashes",
+                "lipStyle": "Glassy Peach Lips",
+                "makeupStyle": "Champagne Highlight Glam",
+                "hairEdges": "Velvet Sleek Edges",
+                "pose": "Step Forward Pose",
+                "camera": "Three Quarter Shot",
+                "lighting": "Pearl Glow Lighting",
+                "background": "Marble Hallway"
+        },
+        "Luxury Sports Drop": {
+                "gender": "Male",
+                "race": "West African",
+                "eyeColor": "Onyx",
+                "hairStyle": "High Top Fade",
+                "hairColor": "Black",
+                "skinTone": "Deep Espresso",
+                "tops": "Baseball Jersey",
+                "bottoms": "Athletic Shorts",
+                "dresses": "None",
+                "shoes": "Nike Air Force 1s",
+                "accessories": "Flat Brim Cap",
+                "jewelry": "Chain Bracelet",
+                "facialHair": "Beard Fade",
+                "pose": "Victory Pose",
+                "camera": "Head To Toe Shot",
+                "lighting": "Clean Daylight",
+                "background": "Sports Arena Tunnel"
+        },
+        "Midnight Mirror Slay": {
+                "gender": "Female",
+                "race": "Mixed Heritage",
+                "eyeColor": "Lavender",
+                "hairStyle": "Straight Middle Part",
+                "hairColor": "Blue Black",
+                "skinTone": "Mocha",
+                "tops": "Asymmetrical Bodysuit",
+                "bottoms": "Leather Pants",
+                "dresses": "None",
+                "shoes": "Studded Ankle Boots",
+                "accessories": "Bling Compact Mirror",
+                "jewelry": "Crystal Necklace",
+                "lashes": "Spiked Editorial Lashes",
+                "lipStyle": "Plum Shine Lips",
+                "makeupStyle": "Graphic Liner Glam",
+                "hairEdges": "Sharp Sculpted Edges",
+                "pose": "Mirror Selfie Pose",
+                "camera": "Mirror Angle Shot",
+                "lighting": "Chrome Flash Lighting",
+                "background": "Mirror Room"
+        },
+        "Modern Royalty": {
+                "gender": "Female",
+                "race": "Yoruba",
+                "eyeColor": "Topaz",
+                "hairStyle": "Box Braids",
+                "hairColor": "Dark Auburn",
+                "skinTone": "Walnut",
+                "tops": "Embellished Blazer",
+                "bottoms": "Pleated Trousers",
+                "dresses": "None",
+                "shoes": "Versace Platform Pumps",
+                "accessories": "Statement Belt",
+                "jewelry": "Layered Pearl Necklace",
+                "lashes": "Classic Glam Lashes",
+                "lipStyle": "Terracotta Gloss Lips",
+                "makeupStyle": "Golden Bronze Glam",
+                "hairEdges": "Signature Swirl Edges",
+                "pose": "Power Pose",
+                "camera": "Low Angle Power Shot",
+                "lighting": "Radiant Front Lighting",
+                "background": "Hotel Lobby"
+        },
+        "Neon Street Siren": {
+                "gender": "Female",
+                "race": "Pacific Islander",
+                "eyeColor": "Turquoise",
+                "hairStyle": "Wet Look Waves",
+                "hairColor": "Teal",
+                "skinTone": "Cafe Bronze",
+                "tops": "Mesh Mockneck Top",
+                "bottoms": "Parachute Pants",
+                "dresses": "None",
+                "shoes": "Designer Monogram Sneakers",
+                "accessories": "Cat Eye Sunglasses",
+                "jewelry": "Body Chain",
+                "lashes": "Wet Lash Spikes",
+                "lipStyle": "Hot Coral Gloss Lips",
+                "makeupStyle": "Icy Pop Glam",
+                "hairEdges": "Side Curl Edges",
+                "pose": "Looking Back Pose",
+                "camera": "Dutch Tilt Shot",
+                "lighting": "Cyberpunk Lighting",
+                "background": "Graffiti Tunnel"
+        },
+        "Off Duty Cool": {
+                "gender": "Male",
+                "race": "South Asian",
+                "eyeColor": "Moss Green",
+                "hairStyle": "Man Bun",
+                "hairColor": "Soft Black",
+                "skinTone": "Sand Beige",
+                "tops": "Luxe Knit Cardigan",
+                "bottoms": "Relaxed Fit Slacks",
+                "dresses": "None",
+                "shoes": "Slip On Leather Sneakers",
+                "accessories": "Card Holder",
+                "jewelry": "Slim Chain Necklace",
+                "facialHair": "Trimmed Goatee",
+                "pose": "Hands In Pockets Pose",
+                "camera": "Mid Shot",
+                "lighting": "Natural Window Light",
+                "background": "Modern Loft"
+        },
+        "Penthouse Muse": {
+                "gender": "Female",
+                "race": "Arab",
+                "eyeColor": "Smoky Blue",
+                "hairStyle": "Hollywood Waves",
+                "hairColor": "Mushroom Brown",
+                "skinTone": "Cream Beige",
+                "tops": "Satin Blouse",
+                "bottoms": "Wide Leg Trousers",
+                "dresses": "None",
+                "shoes": "Chanel Slingback Heels",
+                "accessories": "Designer Tote",
+                "jewelry": "Emerald Ring",
+                "lashes": "Textured Volume Lashes",
+                "lipStyle": "Nude Rose Lips",
+                "makeupStyle": "Soft Matte Glam",
+                "hairEdges": "Polished Temple Edges",
+                "pose": "Sitting Pose",
+                "camera": "Studio Portrait Shot",
+                "lighting": "Soft Glam Lighting",
+                "background": "Luxury Penthouse"
+        },
+        "Photo Shoot Baller": {
+                "gender": "Male",
+                "race": "Black British",
+                "eyeColor": "Ocean Blue",
+                "hairStyle": "Brush Cut",
+                "hairColor": "Wine Red",
+                "skinTone": "Mahogany",
+                "tops": "Monogram Sweatshirt",
+                "bottoms": "Techwear Pants",
+                "dresses": "None",
+                "shoes": "Rick Owens Style Sneakers",
+                "accessories": "Phone Holster",
+                "jewelry": "Tag Bracelet",
+                "facialHair": "Refined Stubble",
+                "pose": "Pointing Pose",
+                "camera": "Product Style Shot",
+                "lighting": "Glossy Studio Lighting",
+                "background": "Studio Backdrop"
+        },
+        "Retro Glitz": {
+                "gender": "Female",
+                "race": "Filipina",
+                "eyeColor": "Bronze Hazel",
+                "hairStyle": "Flip Bob",
+                "hairColor": "Rose Gold",
+                "skinTone": "Almond Beige",
+                "tops": "Pearl Button Cardigan",
+                "bottoms": "Ruched Satin Skirt",
+                "dresses": "None",
+                "shoes": "Miu Miu Ballet Flats",
+                "accessories": "Hair Bow",
+                "jewelry": "Vintage Brooch",
+                "lashes": "Fluttery Mink Lashes",
+                "lipStyle": "Rose Gold Shimmer Lips",
+                "makeupStyle": "Vintage Glam",
+                "hairEdges": "Clean Swoop Edges",
+                "pose": "Shoulder Glance Pose",
+                "camera": "Soft Focus Shot",
+                "lighting": "Candlelit Glow",
+                "background": "Velvet Lounge"
+        },
+        "Rich Aunty Energy": {
+                "gender": "Female",
+                "race": "Caribbean",
+                "eyeColor": "Mahogany Brown",
+                "hairStyle": "Voluminous Blowout",
+                "hairColor": "Chocolate Brown",
+                "skinTone": "Pecan Brown",
+                "tops": "Metallic Blazer",
+                "bottoms": "Tailored Shorts",
+                "dresses": "None",
+                "shoes": "Gucci Horsebit Loafers",
+                "accessories": "Designer Tote",
+                "jewelry": "Gold Hoops",
+                "lashes": "Wide Eye Lashes",
+                "lipStyle": "Toasted Nude Lips",
+                "makeupStyle": "Warm Neutral Glam",
+                "hairEdges": "Laid Curved Edges",
+                "pose": "Arms Crossed Pose",
+                "camera": "Eye Level Shot",
+                "lighting": "Warm Luxe Lighting",
+                "background": "Designer Closet"
+        },
+        "Street Luxe Prince": {
+                "gender": "Male",
+                "race": "Yoruba",
+                "eyeColor": "Golden Brown",
+                "hairStyle": "Afro Taper",
+                "hairColor": "Chocolate Brown",
+                "skinTone": "Rich Umber",
+                "tops": "Cargo Vest",
+                "bottoms": "Cargo Pants",
+                "dresses": "None",
+                "shoes": "Timberland Style Boots",
+                "accessories": "Utility Harness",
+                "jewelry": "Medallion Pendant",
+                "facialHair": "Full Beard",
+                "pose": "Power Pose",
+                "camera": "Hero Shot",
+                "lighting": "Moody Side Lighting",
+                "background": "Cinematic Alley"
+        },
+        "Sunset Glow Babe": {
+                "gender": "Female",
+                "race": "Brazilian",
+                "eyeColor": "Green Hazel",
+                "hairStyle": "Body Wave Layers",
+                "hairColor": "Honey Blonde",
+                "skinTone": "Soft Tan",
+                "tops": "Halter Top",
+                "bottoms": "Yoga Flare Pants",
+                "dresses": "None",
+                "shoes": "Gold Chain Sandals",
+                "accessories": "Silk Scarf",
+                "jewelry": "Charm Anklet",
+                "lashes": "Youthful Soft Lashes",
+                "lipStyle": "Sunset Coral Lips",
+                "makeupStyle": "Peachy Glow Glam",
+                "hairEdges": "Wave Pattern Edges",
+                "pose": "Sunkissed Stretch Pose",
+                "camera": "Top View Shot",
+                "lighting": "Sunset Glow Lighting",
+                "background": "Tropical Courtyard"
+        },
+        "Velvet Night King": {
+                "gender": "Male",
+                "race": "Middle Eastern",
+                "eyeColor": "Graphite",
+                "hairStyle": "Slick Back Undercut",
+                "hairColor": "Raven Black",
+                "skinTone": "Olive Tan",
+                "tops": "Suede Trucker Jacket",
+                "bottoms": "Wool Blend Trousers",
+                "dresses": "None",
+                "shoes": "Square Toe Chelsea Boots",
+                "accessories": "Pocket Square",
+                "jewelry": "Square Signet Ring",
+                "facialHair": "Well Groomed Beard",
+                "pose": "Shoulder Glance Pose",
+                "camera": "Side Profile Shot",
+                "lighting": "Velvet Shadow Lighting",
+                "background": "Velvet Lounge"
+        },
+        "Weekend Rich Girl": {
+                "gender": "Female",
+                "race": "Dominican",
+                "eyeColor": "Cinnamon Brown",
+                "hairStyle": "Half Up Half Down",
+                "hairColor": "Toffee Brown",
+                "skinTone": "Butterscotch",
+                "tops": "Cropped Hoodie",
+                "bottoms": "Straight Leg Jeans",
+                "dresses": "None",
+                "shoes": "Alexander McQueen Oversized Sneakers",
+                "accessories": "Mini Purse",
+                "jewelry": "Charm Bracelet",
+                "lashes": "Natural Curl Lashes",
+                "lipStyle": "Honey Nude Lips",
+                "makeupStyle": "Fresh Face Makeup",
+                "hairEdges": "Clean Natural Edges",
+                "pose": "Walking Pose",
+                "camera": "Street Photography Shot",
+                "lighting": "Clean Daylight",
+                "background": "Palm Tree Skyline"
+        }
+}
+    };
+
+    const ids = {
+      gender: document.getElementById("gender"),
+      preset: document.getElementById("preset"),
+      race: document.getElementById("race"),
+      eyeColor: document.getElementById("eyeColor"),
+      hairStyle: document.getElementById("hairStyle"),
+      hairColor: document.getElementById("hairColor"),
+      skinTone: document.getElementById("skinTone"),
+      tops: document.getElementById("tops"),
+      bottoms: document.getElementById("bottoms"),
+      dresses: document.getElementById("dresses"),
+      dressesField: document.getElementById("dressesField"),
+      shoes: document.getElementById("shoes"),
+      accessories: document.getElementById("accessories"),
+      jewelry: document.getElementById("jewelry"),
+      femaleBeautySection: document.getElementById("femaleBeautySection"),
+      maleGroomingSection: document.getElementById("maleGroomingSection"),
+      lashes: document.getElementById("lashes"),
+      lipStyle: document.getElementById("lipStyle"),
+      makeupStyle: document.getElementById("makeupStyle"),
+      hairEdges: document.getElementById("hairEdges"),
+      facialHair: document.getElementById("facialHair"),
+      pose: document.getElementById("pose"),
+      camera: document.getElementById("camera"),
+      lighting: document.getElementById("lighting"),
+      background: document.getElementById("background"),
+      backgroundCustom: document.getElementById("backgroundCustom"),
+      location: document.getElementById("location"),
+      locationCustom: document.getElementById("locationCustom"),
+      elements: document.getElementById("elements"),
+      elementsCustom: document.getElementById("elementsCustom"),
+      fog: document.getElementById("fog"),
+      fogCustom: document.getElementById("fogCustom"),
+      customTextStyle: document.getElementById("customTextStyle"),
+      customTextStyleCustom: document.getElementById("customTextStyleCustom"),
+      timeOfDay: document.getElementById("timeOfDay"),
+      timeOfDayCustom: document.getElementById("timeOfDayCustom"),
+      season: document.getElementById("season"),
+      seasonCustom: document.getElementById("seasonCustom"),
+      colorPalette: document.getElementById("colorPalette"),
+      colorPaletteCustom: document.getElementById("colorPaletteCustom"),
+      hairGems: document.getElementById("hairGems"),
+      hairGemsCustom: document.getElementById("hairGemsCustom"),
+      eyebrows: document.getElementById("eyebrows"),
+      eyebrowsCustom: document.getElementById("eyebrowsCustom"),
+      nails: document.getElementById("nails"),
+      nailsCustom: document.getElementById("nailsCustom"),
+      ornateElements: document.getElementById("ornateElements"),
+      ornateElementsCustom: document.getElementById("ornateElementsCustom"),
+      artStyle: document.getElementById("artStyle"),
+      artStyleCustom: document.getElementById("artStyleCustom"),
+      facialExpression: document.getElementById("facialExpression"),
+      facialExpressionCustom: document.getElementById("facialExpressionCustom"),
+      facialFeaturesWomen: document.getElementById("facialFeaturesWomen"),
+      facialFeaturesWomenCustom: document.getElementById("facialFeaturesWomenCustom"),
+      earrings: document.getElementById("earrings"),
+      earringsCustom: document.getElementById("earringsCustom"),
+      videoStyle: document.getElementById("videoStyle"),
+      videoLength: document.getElementById("videoLength"),
+      songGenre: document.getElementById("songGenre"),
+      songStyle: document.getElementById("songStyle"),
+      songLength: document.getElementById("songLength"),
+      promptOutput: document.getElementById("promptOutput"),
+      videoScriptOutput: document.getElementById("videoScriptOutput"),
+      sunoScriptOutput: document.getElementById("sunoScriptOutput"),
+      captionOutput: document.getElementById("captionOutput"),
+      marketingOutput: document.getElementById("marketingOutput"),
+      statusBar: document.getElementById("statusBar"),
+      scrollUpBtn: document.getElementById("scrollUpBtn"),
+      scrollDownBtn: document.getElementById("scrollDownBtn")
+    };
+
+    const buttons = {
+      generate: document.getElementById("generateBtn"),
+      copy: document.getElementById("copyBtn"),
+      copyImagePrompt: document.getElementById("copyImagePromptBtn"),
+      copyVideoScript: document.getElementById("copyVideoScriptBtn"),
+      copySunoScript: document.getElementById("copySunoScriptBtn"),
+      copyCaption: document.getElementById("copyCaptionBtn"),
+      copyMarketing: document.getElementById("copyMarketingBtn"),
+      randomize: document.getElementById("randomizeBtn"),
+      clear: document.getElementById("clearBtn")
+    };
+
+    const randomState = {
+      history: [],
+      maxHistory: 12,
+      optionPools: new Map()
+    };
+
+    function populateSelect(select, options, preserveValue = "None") {
+      if (!select) return;
+      const previous = preserveValue || select.value;
+      select.innerHTML = "";
+      options.forEach(option => {
+        const el = document.createElement("option");
+        el.value = option;
+        el.textContent = option;
+        select.appendChild(el);
+      });
+      select.value = options.includes(previous) ? previous : options[0];
+    }
+
+    function setStatus(message, type = "info") {
+      ids.statusBar.className = `status-bar status-${type}`;
+      ids.statusBar.textContent = message;
+    }
+
+    function selectedValue(id) {
+      const value = ids[id].value;
+      return value && value !== "None" ? value : null;
+    }
+
+    function selectedOrCustom(id, customId) {
+      const custom = ids[customId] && ids[customId].value ? ids[customId].value.trim() : "";
+      return custom || selectedValue(id);
+    }
+
+    function getPoolKey(fieldName, options) {
+      return `${fieldName}::${options.join("|")}`;
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function getNextRandomValue(fieldName, options, { allowNone = false, biasNone = 0.18 } = {}) {
+      let source = allowNone ? [...options] : options.filter(item => item !== "None");
+      if (!source.length) return "None";
+
+      if (allowNone && source.includes("None") && Math.random() > biasNone) {
+        source = source.filter(item => item !== "None");
+      }
+
+      const key = getPoolKey(fieldName, source);
+      let pool = randomState.optionPools.get(key);
+
+      if (!pool || pool.length === 0) {
+        pool = shuffleArray(source);
+      }
+
+      const nextValue = pool.pop();
+      randomState.optionPools.set(key, pool);
+      return nextValue;
+    }
+
+    function buildCurrentSignature() {
+      return [
+        ids.gender.value,
+        ids.race.value,
+        ids.eyeColor.value,
+        ids.hairStyle.value,
+        ids.hairColor.value,
+        ids.skinTone.value,
+        ids.tops.value,
+        ids.bottoms.value,
+        ids.dresses.value,
+        ids.shoes.value,
+        ids.accessories.value,
+        ids.jewelry.value,
+        ids.lashes.value,
+        ids.lipStyle.value,
+        ids.makeupStyle.value,
+        ids.hairEdges.value,
+        ids.facialHair.value,
+        ids.pose.value,
+        ids.camera.value,
+        ids.lighting.value,
+        ids.background.value,
+        ids.location.value,
+        ids.elements.value,
+        ids.fog.value,
+        ids.customTextStyle.value,
+        ids.timeOfDay.value,
+        ids.season.value,
+        ids.colorPalette.value,
+        ids.hairGems.value,
+        ids.eyebrows.value,
+        ids.nails.value,
+        ids.ornateElements.value,
+        ids.artStyle.value,
+        ids.facialExpression.value,
+        ids.facialFeaturesWomen.value,
+        ids.earrings.value,
+        ids.backgroundCustom.value,
+        ids.locationCustom.value,
+        ids.elementsCustom.value,
+        ids.fogCustom.value,
+        ids.customTextStyleCustom.value,
+        ids.timeOfDayCustom.value,
+        ids.seasonCustom.value,
+        ids.colorPaletteCustom.value,
+        ids.hairGemsCustom.value,
+        ids.eyebrowsCustom.value,
+        ids.nailsCustom.value,
+        ids.ornateElementsCustom.value,
+        ids.artStyleCustom.value,
+        ids.facialExpressionCustom.value,
+        ids.facialFeaturesWomenCustom.value,
+        ids.earringsCustom.value,
+        ids.videoStyle.value,
+        ids.videoLength.value,
+        ids.songGenre.value,
+        ids.songStyle.value,
+        ids.songLength.value
+      ].join("||");
+    }
+
+    function isRecentSignature(signature) {
+      return randomState.history.includes(signature);
+    }
+
+    function rememberSignature(signature) {
+      randomState.history.push(signature);
+      if (randomState.history.length > randomState.maxHistory) {
+        randomState.history.shift();
+      }
+    }
+
+    function applyPreset(presetName) {
+      if (!presetName || presetName === "None" || !data.presetValues[presetName]) {
+        return;
+      }
+
+      const preset = data.presetValues[presetName];
+      ids.gender.value = preset.gender || "Female";
+      updateGenderFields();
+
+      Object.entries(preset).forEach(([key, value]) => {
+        if (!ids[key] || typeof value === "undefined") return;
+        const hasOption = Array.from(ids[key].options || []).some(option => option.value === value);
+        if (hasOption) {
+          ids[key].value = value;
+        }
+      });
+
+      updateAllOutputs();
+      setStatus(`${presetName} preset applied.`, "success");
+    }
+
+    function populateAll() {
+      populateSelect(ids.gender, data.gender, "Female");
+      populateSelect(ids.preset, data.presets);
+      populateSelect(ids.race, data.race);
+      populateSelect(ids.eyeColor, data.eyeColor);
+      populateSelect(ids.hairColor, data.hairColor);
+      populateSelect(ids.skinTone, data.skinTone);
+      populateSelect(ids.lashes, data.lashesFemale);
+      populateSelect(ids.lipStyle, data.lipStyleFemale);
+      populateSelect(ids.makeupStyle, data.makeupStyleFemale);
+      populateSelect(ids.hairEdges, data.hairEdgesFemale);
+      populateSelect(ids.facialHair, data.facialHairMale);
+      populateSelect(ids.pose, data.pose);
+      populateSelect(ids.camera, data.camera);
+      populateSelect(ids.lighting, data.lighting);
+      populateSelect(ids.background, data.background);
+      populateSelect(ids.location, data.location);
+      populateSelect(ids.elements, data.elements);
+      populateSelect(ids.fog, data.fog);
+      populateSelect(ids.customTextStyle, data.customTextStyle);
+      populateSelect(ids.timeOfDay, data.timeOfDay);
+      populateSelect(ids.season, data.season);
+      populateSelect(ids.colorPalette, data.colorPalette);
+      populateSelect(ids.ornateElements, data.ornateElements);
+      populateSelect(ids.artStyle, data.artStyle);
+      populateSelect(ids.facialExpression, data.facialExpression);
+      populateSelect(ids.dresses, data.dresses);
+      populateSelect(ids.videoLength, data.videoLength, "30 seconds");
+      populateSelect(ids.songLength, data.songLength, "Jingle");
+      updateGenderFields();
+    }
+
+    function updateGenderFields() {
+      const isFemale = ids.gender.value === "Female";
+
+      populateSelect(
+        ids.hairStyle,
+        isFemale ? data.femaleHairStyles : data.maleHairStyles,
+        ids.hairStyle.value || "None"
+      );
+
+      populateSelect(
+        ids.tops,
+        isFemale ? data.topsFemale : data.topsMale,
+        ids.tops.value || "None"
+      );
+
+      populateSelect(
+        ids.bottoms,
+        isFemale ? data.bottomsFemale : data.bottomsMale,
+        ids.bottoms.value || "None"
+      );
+
+      populateSelect(
+        ids.shoes,
+        isFemale ? data.shoesFemale : data.shoesMale,
+        ids.shoes.value || "None"
+      );
+
+      populateSelect(
+        ids.accessories,
+        isFemale ? data.accessoriesFemale : data.accessoriesMale,
+        ids.accessories.value || "None"
+      );
+
+      populateSelect(
+        ids.jewelry,
+        isFemale ? data.jewelryFemale : data.jewelryMale,
+        ids.jewelry.value || "None"
+      );
+
+      populateSelect(
+        ids.hairGems,
+        data.hairGems,
+        ids.hairGems.value || "None"
+      );
+
+      populateSelect(
+        ids.eyebrows,
+        data.eyebrows,
+        ids.eyebrows.value || "None"
+      );
+
+      populateSelect(
+        ids.nails,
+        data.nails,
+        ids.nails.value || "None"
+      );
+
+      populateSelect(
+        ids.facialFeaturesWomen,
+        data.facialFeaturesWomen,
+        ids.facialFeaturesWomen.value || "None"
+      );
+
+      populateSelect(
+        ids.earrings,
+        data.earrings,
+        ids.earrings.value || "None"
+      );
+
+      ids.dressesField.classList.toggle("hidden", !isFemale);
+      ids.femaleBeautySection.classList.toggle("hidden", !isFemale);
+      ids.maleGroomingSection.classList.toggle("hidden", isFemale);
+
+      if (!isFemale) {
+        ids.dresses.value = "None";
+        ids.lashes.value = "None";
+        ids.lipStyle.value = "None";
+        ids.makeupStyle.value = "None";
+        ids.hairEdges.value = "None";
+        ids.hairGems.value = "None";
+        ids.eyebrows.value = "None";
+        ids.nails.value = "None";
+        ids.facialFeaturesWomen.value = "None";
+        ids.earrings.value = "None";
+        ["hairGemsCustom","eyebrowsCustom","nailsCustom","facialFeaturesWomenCustom","earringsCustom"].forEach(key => ids[key].value = "");
+      } else {
+        ids.facialHair.value = "None";
+      }
+    }
+
+    function buildOutfit(gender) {
+      const top = selectedValue("tops");
+      const bottom = selectedValue("bottoms");
+      const dress = selectedValue("dresses");
+      const shoes = selectedValue("shoes") || "stylish sneakers";
+
+      if (gender === "Female" && dress) return `dressed in a ${dress} with ${shoes}`;
+      if (top && bottom) return `dressed in ${top} and ${bottom} with ${shoes}`;
+      if (top && !bottom) return `dressed in ${top} with ${shoes}`;
+      if (!top && bottom) return `dressed in ${bottom} with ${shoes}`;
+      return `dressed in stylish streetwear with ${shoes}`;
+    }
+
+
+    function buildCaptionSuggestions() {
+      const preset = ids.preset.value && ids.preset.value !== "None" ? ids.preset.value : null;
+      const gender = (ids.gender.value || "Female").toLowerCase();
+      const location = selectedOrCustom("location", "locationCustom") || selectedOrCustom("background", "backgroundCustom") || "luxury scene";
+      const artStyle = selectedOrCustom("artStyle", "artStyleCustom") || "glossy premium chibi art";
+      const palette = selectedOrCustom("colorPalette", "colorPaletteCustom") || "royal blue and gold";
+      const vibe = selectedOrCustom("facialExpression", "facialExpressionCustom") || "confident";
+      const hookLead = preset ? `${preset} energy.` : `Main character energy.`;
+      return [
+        `Stop scrolling. ${hookLead} This ${gender} build came out insane. ${location}, ${palette}, and ${artStyle} all in one prompt. Link in bio.`,
+        `POV: you finally found a prompt generator that gives you luxury results without the guesswork. ${vibe} vibe, rich detail, zero boring outputs.`,
+        `Creators, this is how you make AI art look expensive. Built with glam details, stronger scene control, and scroll-stopping styling.`,
+        `Not another basic prompt pack. This one helps you create a full visual world, sharper branding, and faster content ideas in minutes.`,
+        `Want the exact generator behind this look? Grab it, make it yours, and turn your ideas into products people actually want to click.`
+      ].join("\n\n");
+    }
+
+    function buildMarketingCopy() {
+      const preset = ids.preset.value && ids.preset.value !== "None" ? ids.preset.value : "Custom Luxury Build";
+      const gender = ids.gender.value || "Female";
+      const race = selectedValue("race") || "inclusive beauty";
+      const location = selectedOrCustom("location", "locationCustom") || selectedOrCustom("background", "backgroundCustom") || "editorial luxury setting";
+      const palette = selectedOrCustom("colorPalette", "colorPaletteCustom") || "royal blue and gold";
+      const artStyle = selectedOrCustom("artStyle", "artStyleCustom") || "glossy premium chibi art";
+      const songAngle = ids.songGenre.value.trim() || "flexible music-ready branding";
+      return `PRODUCT POSITIONING
+${preset} gives creators a faster way to build premium AI visuals with stronger control over scene, styling, glam details, and promotional assets.
+
+WHY IT SELLS
+• Saves time and kills blank-page confusion
+• Gives luxury-looking prompts instead of generic outputs
+• Includes image prompt, video script, music prompt, captions, and sales angles in one place
+• Works for creators selling digital products, printables, prompts, bundles, and branded content
+
+BEST CUSTOMER ANGLE
+This generator is for creators who want polished results, brand consistency, and more content ideas without piecing together five different tools.
+
+LANDING PAGE HOOK
+Build scroll-stopping AI visuals, promo scripts, song prompts, and marketing copy from one glam generator.
+
+FEATURE HIGHLIGHTS
+• Inclusive character direction with detailed styling
+• Scene-building controls for ${location}
+• Premium visual direction using ${palette}
+• Art direction support with ${artStyle}
+• Bonus promo tools for video and ${songAngle}
+
+BUYER CTA IDEAS
+• Grab the generator and start creating today
+• Turn one idea into a full promo campaign
+• Stop guessing and create luxury-level content faster
+
+WEBPAGE TEASER
+Made for bold creators who want ${gender.toLowerCase()}-focused glam, ${race} representation, premium styling, and stronger conversions.`;
+    }
+
+    function updateAllOutputs() {
+      ids.promptOutput.value = buildPrompt();
+      ids.videoScriptOutput.value = buildVideoScript();
+      ids.sunoScriptOutput.value = buildSunoScript();
+      ids.captionOutput.value = buildCaptionSuggestions();
+      ids.marketingOutput.value = buildMarketingCopy();
+    }
+
+function buildVideoScript() {
+      const gender = ids.gender.value || "Female";
+      const race = selectedValue("race") || "glamorous mixed-heritage";
+      const location = selectedOrCustom("location", "locationCustom") || selectedOrCustom("background", "backgroundCustom") || "luxury set";
+      const pose = selectedValue("pose") || "power pose";
+      const lighting = selectedValue("lighting") || "soft glam lighting";
+      const camera = selectedValue("camera") || "full body shot";
+      const colorPalette = selectedOrCustom("colorPalette", "colorPaletteCustom") || "royal blue and gold";
+      const artStyle = selectedOrCustom("artStyle", "artStyleCustom") || "glossy 3D chibi cartoon style";
+      const facialExpression = selectedOrCustom("facialExpression", "facialExpressionCustom") || "confident";
+      const videoStyle = ids.videoStyle.value.trim() || "luxury glam promo";
+      const videoLength = ids.videoLength.value || "30 seconds";
+      const outfit = buildOutfit(gender);
+      const hook = gender === "Female" ? "She walks in like the whole room already knows her name." : "He steps in like the whole city is watching.";
+      return `Create a ${videoLength} ${videoStyle} video script for a glossy chibi ${gender.toLowerCase()} character with ${race} features. Visual direction: ${outfit}. Scene location: ${location}. Lighting: ${lighting}. Camera angle: ${camera}. Pose: ${pose}. Facial expression: ${facialExpression}. Color palette: ${colorPalette}. Art style: ${artStyle}. Include a strong opening hook, 4 to 8 quick visual beat descriptions, short spoken voiceover lines, on-screen text suggestions, scene transitions, and a clear ending shot. Keep it punchy, scroll-stopping, and easy to use for TikTok, Reels, or Shorts. Opening energy: ${hook}`;
+    }
+
+    function buildSunoScript() {
+      const gender = ids.gender.value || "Female";
+      const location = selectedOrCustom("location", "locationCustom") || selectedOrCustom("background", "backgroundCustom") || "luxury set";
+      const colorPalette = selectedOrCustom("colorPalette", "colorPaletteCustom") || "royal blue and gold";
+      const facialExpression = selectedOrCustom("facialExpression", "facialExpressionCustom") || "confident";
+      const songGenre = ids.songGenre.value.trim() || "open genre choice";
+      const songStyle = ids.songStyle.value.trim() || "open style choice";
+      const songLength = ids.songLength.value || "Jingle";
+      const weirdness = songLength === "Jingle" ? "18% to 28%" : songLength === "30 seconds" ? "22% to 35%" : "28% to 42%";
+      const styleInfluence = songLength === "Jingle" ? "55% to 70%" : songLength === "30 seconds" ? "60% to 78%" : "65% to 82%";
+      const audioInfluence = songLength === "Jingle" ? "65% to 80%" : songLength === "30 seconds" ? "60% to 75%" : "58% to 72%";
+      const lyricGuide = songLength === "Jingle"
+        ? "Write a catchy, repeatable hook with 4 to 8 short lines and a clean brand-memory chorus."
+        : songLength === "30 seconds"
+          ? "Write a short song with a hook, one quick verse, and a memorable ending line."
+          : "Write a one-minute song with intro, hook, verse, second hook, and a strong ending line.";
+      return `Create a Suno-ready ${songLength.toLowerCase()} song prompt for a ${gender.toLowerCase()} glam brand moment. Genre freedom: ${songGenre}. Style freedom: ${songStyle}. Mood: ${facialExpression}, glamorous, confident, luxurious, catchy. Scene inspiration: ${location}. Color vibe: ${colorPalette}. ${lyricGuide} Keep the lyrics clean, vivid, easy to sing, and suitable for promo content. Include ad-lib energy, a memorable hook, and room for either playful, soulful, bossy, worshipful, funny, or cinematic direction depending on the chosen genre and style. Suggested settings — Weirdness: ${weirdness}. Style influence: ${styleInfluence}. Audio influence: ${audioInfluence}.`;
+    }
+
+    function buildPrompt() {      const gender = ids.gender.value || "Female";
+      const genderText = gender.toLowerCase();
+      const isFemale = gender === "Female";
+      const race = selectedValue("race") || "glamorous mixed-heritage";
+      const skinTone = selectedValue("skinTone") || "caramel";
+      const eyeColor = selectedValue("eyeColor") || "warm brown";
+      const hairStyle = selectedValue("hairStyle") || (isFemale ? "long sleek ponytail" : "taper fade");
+      const hairColor = selectedValue("hairColor") || "rich dark brown";
+      const accessories = selectedValue("accessories") || (isFemale ? "glam charm accessories" : "streetwear accessories");
+      const jewelry = selectedValue("jewelry") || (isFemale ? "gold hoops and layered chains" : "a rope chain and a watch");
+      const pose = selectedValue("pose") || "standing pose";
+      const background = selectedOrCustom("background", "backgroundCustom") || "concert backstage";
+      const location = selectedOrCustom("location", "locationCustom");
+      const elements = selectedOrCustom("elements", "elementsCustom");
+      const fog = selectedOrCustom("fog", "fogCustom");
+      const customTextStyle = selectedOrCustom("customTextStyle", "customTextStyleCustom");
+      const timeOfDay = selectedOrCustom("timeOfDay", "timeOfDayCustom");
+      const season = selectedOrCustom("season", "seasonCustom");
+      const colorPalette = selectedOrCustom("colorPalette", "colorPaletteCustom");
+      const ornateElements = selectedOrCustom("ornateElements", "ornateElementsCustom");
+      const artStyle = selectedOrCustom("artStyle", "artStyleCustom") || "glossy 3D chibi cartoon style";
+      const facialExpression = selectedOrCustom("facialExpression", "facialExpressionCustom");
+      const lighting = selectedValue("lighting") || (isFemale ? "soft glam lighting" : "high contrast editorial");
+      const camera = selectedValue("camera") || "full body shot";
+      const outfit = buildOutfit(gender);
+
+      const sceneParts = [
+        location ? `Scene location: ${location}.` : "",
+        `Background: ${background}.`,
+        elements ? `Elements: ${elements}.` : "",
+        fog ? `Fog: ${fog}.` : "",
+        timeOfDay ? `Time of day: ${timeOfDay}.` : "",
+        season ? `Season: ${season}.` : "",
+        colorPalette ? `Color palette: ${colorPalette}.` : "",
+        ornateElements ? `Ornate elements: ${ornateElements}.` : "",
+        customTextStyle ? `Typography style: ${customTextStyle}.` : ""
+      ].filter(Boolean).join(" ");
+
+      if (isFemale) {
+        const lashes = selectedValue("lashes") || "dramatic lashes";
+        const lipStyle = selectedValue("lipStyle") || "glossy lips";
+        const makeup = selectedValue("makeupStyle") || "glossy skin glam";
+        const edges = selectedValue("hairEdges");
+        const hairGems = selectedOrCustom("hairGems", "hairGemsCustom");
+        const eyebrows = selectedOrCustom("eyebrows", "eyebrowsCustom");
+        const nails = selectedOrCustom("nails", "nailsCustom");
+        const facialFeaturesWomen = selectedOrCustom("facialFeaturesWomen", "facialFeaturesWomenCustom");
+        const earrings = selectedOrCustom("earrings", "earringsCustom");
+        const femaleFinish = "High shine skin highlights, glossy lips, oversized expressive eyes, confident attitude, vibrant lighting, cinematic contrast, and playful energy.";
+
+        return `Glossy ultra-edgy exaggerated chibi style illustration of a confident ${genderText} with ${race} features, ${skinTone} skin tone, ${eyeColor} eyes${facialExpression ? `, facial expression ${facialExpression}` : ""}, ${facialFeaturesWomen ? `facial features ${facialFeaturesWomen}, ` : ""}${eyebrows ? `${eyebrows}, ` : ""}with ${lashes}, ${lipStyle}, wearing ${hairStyle} hairstyle in ${hairColor}${edges ? `, with ${edges}` : ""}${hairGems ? `, hair gems ${hairGems}` : ""}, ${outfit}, accessories include ${accessories}, ${jewelry}${earrings ? `, and ${earrings}` : ""}${nails ? `. Nails: ${nails}` : ""}. Makeup style ${makeup}. ${sceneParts} Lighting: ${lighting}. Camera angle: ${camera}. Pose: ${pose}. Full body visible with head fully in frame. ${femaleFinish} Rendered in ${artStyle} with bold outlines, ultra smooth airbrushed shading, luminous glow, cinematic contrast, vibrant color, professional digital illustration.`;
+      }
+
+      const facialHair = selectedValue("facialHair");
+      const maleFinish = "Defined jawline, sharp confident eyes, athletic body language, masculine swagger, strong stance, crisp styling, clean contrast, and powerful energy.";
+      return `Glossy ultra-edgy exaggerated chibi style illustration of a confident ${genderText} with ${race} features, ${skinTone} skin tone, ${eyeColor} eyes${facialExpression ? `, facial expression ${facialExpression}` : ""}, wearing ${hairStyle} hairstyle in ${hairColor}${facialHair ? ` with ${facialHair}` : ""}, ${outfit}, accessories include ${accessories} and ${jewelry}. ${sceneParts} Lighting: ${lighting}. Camera angle: ${camera}. Pose: ${pose}. Full body visible with head fully in frame. ${maleFinish} Rendered in ${artStyle} with bold outlines, ultra smooth airbrushed shading, luminous glow, cinematic contrast, vibrant color, professional digital illustration.`;
+    }
+
+    async function copyWithClipboardApi(text) {
+      const blockedProtocols = ["file:", "about:"];
+      const protocol = window.location && window.location.protocol ? window.location.protocol : "";
+      const isBlockedContext = blockedProtocols.includes(protocol) || !window.isSecureContext;
+
+      if (isBlockedContext) {
+        throw new Error("Clipboard API blocked in this preview context");
+      }
+
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
+
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    function copyWithExecCommand(text) {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.className = "sr-only";
+      document.body.appendChild(helper);
+      helper.focus();
+      helper.select();
+      helper.setSelectionRange(0, helper.value.length);
+
+      let succeeded = false;
+      try {
+        succeeded = document.execCommand("copy");
+      } catch {
+        succeeded = false;
+      }
+
+      document.body.removeChild(helper);
+      return succeeded;
+    }
+
+    async function copyOutput(text, button, emptyMessage, successMessage, targetField) {
+      const cleanText = (text || "").trim();
+      if (!cleanText) {
+        setStatus(emptyMessage, "error");
+        return;
+      }
+
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = "Copying...";
+
+      try {
+        await copyWithClipboardApi(cleanText);
+        button.textContent = "Copied";
+        setStatus(successMessage, "success");
+      } catch {
+        const fallbackWorked = copyWithExecCommand(cleanText);
+        if (fallbackWorked) {
+          button.textContent = "Copied";
+          setStatus("Copied using fallback mode.", "success");
+        } else if (targetField) {
+          targetField.focus();
+          targetField.select();
+          targetField.setSelectionRange(0, targetField.value.length);
+          button.textContent = "Select Text";
+          setStatus("Clipboard is blocked here. Your text is selected now. Press Ctrl+C or Cmd+C.", "error");
+        } else {
+          setStatus("Copy failed in this preview context.", "error");
+        }
+      } finally {
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = original;
+        }, 1600);
+      }
+    }
+
+    async function copyPrompt() {
+      await copyOutput(
+        ids.promptOutput.value,
+        buttons.copy,
+        "Generate a prompt first, then copy it.",
+        "Prompt copied to your clipboard.",
+        ids.promptOutput
+      );
+    }
+
+    async function copyImagePrompt() {
+      await copyOutput(
+        ids.promptOutput.value,
+        buttons.copyImagePrompt,
+        "Generate an image prompt first, then copy it.",
+        "Image prompt copied to your clipboard.",
+        ids.promptOutput
+      );
+    }
+
+    async function copyVideoScript() {
+      await copyOutput(
+        ids.videoScriptOutput.value,
+        buttons.copyVideoScript,
+        "Generate a video script first, then copy it.",
+        "Video script copied to your clipboard.",
+        ids.videoScriptOutput
+      );
+    }
+
+    async function copySunoScript() {
+      await copyOutput(
+        ids.sunoScriptOutput.value,
+        buttons.copySunoScript,
+        "Generate a Suno script first, then copy it.",
+        "Suno script copied to your clipboard.",
+        ids.sunoScriptOutput
+      );
+    }
+
+    async function copyCaptionOutput() {
+      await copyOutput(
+        ids.captionOutput.value,
+        buttons.copyCaption,
+        "Generate captions first, then copy them.",
+        "Captions copied to your clipboard.",
+        ids.captionOutput
+      );
+    }
+
+    async function copyMarketingOutput() {
+      await copyOutput(
+        ids.marketingOutput.value,
+        buttons.copyMarketing,
+        "Generate marketing copy first, then copy it.",
+        "Marketing copy copied to your clipboard.",
+        ids.marketingOutput
+      );
+    }
+
+    function applyRandomSet() {
+      const isFemale = getNextRandomValue("gender", data.gender, { allowNone: false }) === "Female";
+      ids.gender.value = isFemale ? "Female" : "Male";
+      updateGenderFields();
+
+      ids.race.value = getNextRandomValue("race", data.race);
+      ids.eyeColor.value = getNextRandomValue("eyeColor", data.eyeColor);
+      ids.hairStyle.value = getNextRandomValue("hairStyle", isFemale ? data.femaleHairStyles : data.maleHairStyles);
+      ids.hairColor.value = getNextRandomValue("hairColor", data.hairColor);
+      ids.skinTone.value = getNextRandomValue("skinTone", data.skinTone);
+
+      ids.tops.value = getNextRandomValue("tops", isFemale ? data.topsFemale : data.topsMale);
+      ids.bottoms.value = getNextRandomValue("bottoms", isFemale ? data.bottomsFemale : data.bottomsMale);
+      ids.shoes.value = getNextRandomValue("shoes", isFemale ? data.shoesFemale : data.shoesMale);
+      ids.accessories.value = getNextRandomValue("accessories", isFemale ? data.accessoriesFemale : data.accessoriesMale);
+      ids.jewelry.value = getNextRandomValue("jewelry", isFemale ? data.jewelryFemale : data.jewelryMale);
+
+      ids.pose.value = getNextRandomValue("pose", data.pose);
+      ids.camera.value = getNextRandomValue("camera", data.camera);
+      ids.lighting.value = getNextRandomValue("lighting", data.lighting);
+      ids.background.value = getNextRandomValue("background", data.background);
+      ids.location.value = getNextRandomValue("location", data.location, { allowNone: true, biasNone: 0.25 });
+      ids.elements.value = getNextRandomValue("elements", data.elements, { allowNone: true, biasNone: 0.25 });
+      ids.fog.value = getNextRandomValue("fog", data.fog, { allowNone: true, biasNone: 0.45 });
+      ids.customTextStyle.value = getNextRandomValue("customTextStyle", data.customTextStyle, { allowNone: true, biasNone: 0.4 });
+      ids.timeOfDay.value = getNextRandomValue("timeOfDay", data.timeOfDay, { allowNone: true, biasNone: 0.25 });
+      ids.season.value = getNextRandomValue("season", data.season, { allowNone: true, biasNone: 0.25 });
+      ids.colorPalette.value = getNextRandomValue("colorPalette", data.colorPalette, { allowNone: true, biasNone: 0.2 });
+      ids.ornateElements.value = getNextRandomValue("ornateElements", data.ornateElements, { allowNone: true, biasNone: 0.35 });
+      ids.artStyle.value = getNextRandomValue("artStyle", data.artStyle, { allowNone: true, biasNone: 0.15 });
+      ids.facialExpression.value = getNextRandomValue("facialExpression", data.facialExpression, { allowNone: true, biasNone: 0.2 });
+      ["backgroundCustom","locationCustom","elementsCustom","fogCustom","customTextStyleCustom","timeOfDayCustom","seasonCustom","colorPaletteCustom","ornateElementsCustom","artStyleCustom","facialExpressionCustom"].forEach(key => ids[key].value = "");
+
+      if (isFemale) {
+        ids.dresses.value = getNextRandomValue("dresses", data.dresses, { allowNone: true, biasNone: 0.45 });
+        ids.lashes.value = getNextRandomValue("lashes", data.lashesFemale);
+        ids.lipStyle.value = getNextRandomValue("lipStyle", data.lipStyleFemale);
+        ids.makeupStyle.value = getNextRandomValue("makeupStyle", data.makeupStyleFemale);
+        ids.hairEdges.value = getNextRandomValue("hairEdges", data.hairEdgesFemale, { allowNone: true, biasNone: 0.35 });
+        ids.hairGems.value = getNextRandomValue("hairGems", data.hairGems, { allowNone: true, biasNone: 0.3 });
+        ids.eyebrows.value = getNextRandomValue("eyebrows", data.eyebrows, { allowNone: true, biasNone: 0.15 });
+        ids.nails.value = getNextRandomValue("nails", data.nails, { allowNone: true, biasNone: 0.2 });
+        ids.facialFeaturesWomen.value = getNextRandomValue("facialFeaturesWomen", data.facialFeaturesWomen, { allowNone: true, biasNone: 0.2 });
+        ids.earrings.value = getNextRandomValue("earrings", data.earrings, { allowNone: true, biasNone: 0.2 });
+        ["hairGemsCustom","eyebrowsCustom","nailsCustom","facialFeaturesWomenCustom","earringsCustom"].forEach(key => ids[key].value = "");
+        ids.facialHair.value = "None";
+      } else {
+        ids.dresses.value = "None";
+        ids.lashes.value = "None";
+        ids.lipStyle.value = "None";
+        ids.makeupStyle.value = "None";
+        ids.hairEdges.value = "None";
+        ids.hairGems.value = "None";
+        ids.eyebrows.value = "None";
+        ids.nails.value = "None";
+        ids.facialFeaturesWomen.value = "None";
+        ids.earrings.value = "None";
+        ["hairGemsCustom","eyebrowsCustom","nailsCustom","facialFeaturesWomenCustom","earringsCustom"].forEach(key => ids[key].value = "");
+        ids.facialHair.value = getNextRandomValue("facialHair", data.facialHairMale, { allowNone: true, biasNone: 0.4 });
+      }
+
+      ids.promptOutput.value = buildPrompt();
+    }
+
+    function randomizeAll() {
+      let tries = 0;
+      let signature = "";
+
+      do {
+        applyRandomSet();
+        signature = buildCurrentSignature();
+        tries += 1;
+      } while (isRecentSignature(signature) && tries < 10);
+
+      rememberSignature(signature);
+      updateAllOutputs();
+      setStatus(`Options randomized with deeper variation. Try ${tries}.`, "info");
+    }
+
+    function clearAll() {
+      ids.gender.value = "Female";
+      ids.preset.value = "None";
+      updateGenderFields();
+
+      [
+        "race","eyeColor","hairStyle","hairColor","skinTone","tops","bottoms","dresses","shoes",
+        "accessories","jewelry","lashes","lipStyle","makeupStyle","hairEdges","facialHair",
+        "pose","camera","lighting","background","location","elements","fog","customTextStyle","timeOfDay","season","colorPalette",
+        "hairGems","eyebrows","nails","ornateElements","artStyle","facialExpression","facialFeaturesWomen","earrings"
+      ].forEach(key => {
+        ids[key].value = "None";
+      });
+
+      [
+        "backgroundCustom","locationCustom","elementsCustom","fogCustom","customTextStyleCustom","timeOfDayCustom","seasonCustom","colorPaletteCustom",
+        "hairGemsCustom","eyebrowsCustom","nailsCustom","ornateElementsCustom","artStyleCustom","facialExpressionCustom","facialFeaturesWomenCustom","earringsCustom"
+      ].forEach(key => {
+        ids[key].value = "";
+      });
+
+      ids.promptOutput.value = "";
+      ids.videoScriptOutput.value = "";
+      ids.sunoScriptOutput.value = "";
+      ids.captionOutput.value = "";
+      ids.marketingOutput.value = "";
+      setStatus("All options cleared.", "info");
+    }
+
+    function addTestResult(name, passed, details = "") {
+      const item = document.createElement("li");
+      item.className = passed ? "pass" : "fail";
+      item.textContent = `${passed ? "PASS" : "FAIL"} — ${name}${details ? `: ${details}` : ""}`;
+      ids.testResults.appendChild(item);
+    }
+
+    function assert(name, condition, details = "") {
+      addTestResult(name, Boolean(condition), details);
+    }
+
+    function runTests() {
+      ids.testResults.innerHTML = "";
+
+      ids.gender.value = "Female";
+      updateGenderFields();
+      assert("Female shoes include Nike Air Force 1s", Array.from(ids.shoes.options).some(opt => opt.value === "Nike Air Force 1s"));
+      assert("Female shoes include Christian Louboutin Red Bottom Heels", Array.from(ids.shoes.options).some(opt => opt.value === "Christian Louboutin Red Bottom Heels"));
+      assert("Female shoes count is 40", data.shoesFemale.length === 40, `got ${data.shoesFemale.length}`);
+
+      ids.gender.value = "Male";
+      updateGenderFields();
+      assert("Male shoes include Jordan 1 High Tops", Array.from(ids.shoes.options).some(opt => opt.value === "Jordan 1 High Tops"));
+      assert("Male shoes include Nike Dunk Lows", Array.from(ids.shoes.options).some(opt => opt.value === "Nike Dunk Lows"));
+      assert("Male shoes count is 40", data.shoesMale.length === 40, `got ${data.shoesMale.length}`);
+      assert("Preset count is 26 including None", data.presets.length === 26, `got ${data.presets.length}`);
+
+      const before = buildCurrentSignature();
+      randomizeAll();
+      const after = buildCurrentSignature();
+
+      assert("Randomize changes the signature", before !== after);
+      assert("Random history stores entries", randomState.history.length > 0, `got ${randomState.history.length}`);
+      assert("Video script builds", buildVideoScript().includes("video script"));
+      assert("Suno script builds", buildSunoScript().includes("Suno-ready"));
+    }
+
+    ids.gender.addEventListener("change", () => {
+      if (ids.preset.value !== "None") {
+        ids.preset.value = "None";
+      }
+      updateGenderFields();
+      updateAllOutputs();
+      setStatus("Gender updated. Shoe options switched too.", "info");
+    });
+
+    ids.preset.addEventListener("change", () => {
+      if (ids.preset.value === "None") {
+        updateAllOutputs();
+        setStatus("Preset cleared.", "info");
+        return;
+      }
+      applyPreset(ids.preset.value);
+    });
+
+    buttons.generate.addEventListener("click", () => {
+      updateAllOutputs();
+      setStatus("Prompt suite generated.", "success");
+    });
+
+    buttons.copy.addEventListener("click", copyPrompt);
+    buttons.copyImagePrompt.addEventListener("click", copyImagePrompt);
+    buttons.copyVideoScript.addEventListener("click", copyVideoScript);
+    buttons.copySunoScript.addEventListener("click", copySunoScript);
+    buttons.copyCaption.addEventListener("click", copyCaptionOutput);
+    buttons.copyMarketing.addEventListener("click", copyMarketingOutput);
+    buttons.randomize.addEventListener("click", randomizeAll);
+    buttons.clear.addEventListener("click", clearAll);
+
+    [
+      "race","eyeColor","hairStyle","hairColor","skinTone","tops","bottoms","dresses","shoes",
+      "accessories","jewelry","lashes","lipStyle","makeupStyle","hairEdges","facialHair",
+      "pose","camera","lighting","background"
+    ].forEach(key => {
+      ids[key].addEventListener("change", () => {
+        if (ids.preset.value !== "None") {
+          ids.preset.value = "None";
+        }
+        updateAllOutputs();
+      });
+    });
+
+    [
+      "backgroundCustom","locationCustom","elementsCustom","fogCustom","customTextStyleCustom","timeOfDayCustom",
+      "seasonCustom","colorPaletteCustom","hairGemsCustom","eyebrowsCustom","nailsCustom","ornateElementsCustom",
+      "artStyleCustom","facialExpressionCustom","facialFeaturesWomenCustom","earringsCustom","videoStyle","songGenre","songStyle"
+    ].forEach(key => {
+      ids[key].addEventListener("input", () => {
+        if (ids.preset.value !== "None") {
+          ids.preset.value = "None";
+        }
+        updateAllOutputs();
+      });
+    });
+
+    ["location","elements","fog","customTextStyle","timeOfDay","season","colorPalette","hairGems","eyebrows","nails","ornateElements","artStyle","facialExpression","facialFeaturesWomen","earrings","videoLength","songLength"].forEach(key => {
+      ids[key].addEventListener("change", () => {
+        if (ids.preset.value !== "None") {
+          ids.preset.value = "None";
+        }
+        updateAllOutputs();
+      });
+    });
+
+    ids.scrollUpBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    ids.scrollDownBtn.addEventListener("click", () => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }));
+
+    populateAll();
+    clearAll();
+    updateAllOutputs();
+    setStatus("Ready. Build your glam prompt.", "info");
+  </script>
+</body>
+</html>
